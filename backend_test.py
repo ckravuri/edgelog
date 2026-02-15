@@ -167,6 +167,132 @@ class EdgeLogAPITester:
         # Get daily analytics
         self.run_test("Get Daily Analytics", "GET", "analytics/daily", 200)
 
+    def test_cloudinary_endpoints(self):
+        """Test Cloudinary signature endpoint - NEW FEATURE"""
+        print("\n" + "="*50)
+        print("☁️ TESTING CLOUDINARY ENDPOINTS (NEW)")
+        print("="*50)
+        
+        # Test get Cloudinary signature for image upload
+        success, response = self.run_test(
+            "Get Cloudinary Signature for Image",
+            "GET",
+            "cloudinary/signature?resource_type=image&folder=screenshots",
+            200
+        )
+        
+        if success:
+            # Validate response contains required fields
+            required_fields = ['signature', 'timestamp', 'cloud_name', 'api_key', 'folder']
+            for field in required_fields:
+                if field in response:
+                    print(f"  ✓ Contains {field}")
+                else:
+                    print(f"  ❌ Missing {field}")
+        
+        # Test with different folder
+        self.run_test(
+            "Get Cloudinary Signature for Trades Folder", 
+            "GET",
+            "cloudinary/signature?resource_type=image&folder=trades",
+            200
+        )
+
+    def test_ai_reports_endpoints(self):
+        """Test AI Reports generation endpoints - NEW FEATURE"""
+        print("\n" + "="*50)
+        print("🤖 TESTING AI REPORTS ENDPOINTS (NEW)")
+        print("="*50)
+        
+        # Test weekly AI report generation
+        print("Generating weekly report (may take a few seconds for AI processing)...")
+        success, weekly_report = self.run_test(
+            "Generate Weekly AI Report",
+            "POST",
+            "reports/generate?period=weekly",
+            200
+        )
+        
+        if success and 'report_id' in weekly_report:
+            weekly_report_id = weekly_report['report_id']
+            print(f"Generated weekly report ID: {weekly_report_id}")
+            
+            # Test getting specific report
+            self.run_test(
+                "Get Specific Weekly Report",
+                "GET", 
+                f"reports/{weekly_report_id}",
+                200
+            )
+        
+        # Test monthly AI report generation
+        print("Generating monthly report (may take a few seconds for AI processing)...")
+        success, monthly_report = self.run_test(
+            "Generate Monthly AI Report",
+            "POST",
+            "reports/generate?period=monthly", 
+            200
+        )
+        
+        if success and 'report_id' in monthly_report:
+            monthly_report_id = monthly_report['report_id']
+            print(f"Generated monthly report ID: {monthly_report_id}")
+        
+        # Test get all reports
+        success, reports_list = self.run_test(
+            "Get All AI Reports",
+            "GET",
+            "reports",
+            200
+        )
+        
+        if success:
+            print(f"  Found {len(reports_list)} reports in history")
+
+    def test_trade_with_screenshot(self):
+        """Test trade creation with screenshot_url - NEW FEATURE"""
+        print("\n" + "="*50)
+        print("📸 TESTING TRADE WITH SCREENSHOT (NEW)")
+        print("="*50)
+        
+        # Create a trade with screenshot URL
+        trade_with_screenshot = {
+            "trading_pair": "EURUSD",
+            "trade_type": "sell",
+            "entry_price": 1.0850,
+            "stop_loss": 1.0880,
+            "take_profit": 1.0800,
+            "lot_size": 0.05,
+            "trade_date": datetime.now(timezone.utc).isoformat(),
+            "notes": "Test trade with screenshot",
+            "emotion_before": "confident",
+            "screenshot_url": "https://res.cloudinary.com/test/image/upload/test_screenshot.jpg"
+        }
+        
+        success, response = self.run_test(
+            "Create Trade with Screenshot",
+            "POST",
+            "trades",
+            200,
+            data=trade_with_screenshot
+        )
+        
+        if success and 'trade_id' in response:
+            trade_id = response['trade_id']
+            # Verify screenshot_url was saved
+            if response.get('screenshot_url'):
+                print(f"  ✓ Screenshot URL saved: {response['screenshot_url']}")
+            else:
+                print("  ❌ Screenshot URL not returned in response")
+            
+            # Clean up test trade
+            self.run_test(
+                "Delete Screenshot Test Trade",
+                "DELETE",
+                f"trades/{trade_id}",
+                200
+            )
+
     def test_settings_endpoints(self):
         """Test settings endpoints"""
         print("\n" + "="*50)
