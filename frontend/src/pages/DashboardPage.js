@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, LineChart, Line, Tooltip, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, LineChart, Line, Tooltip, CartesianGrid, AreaChart, Area } from "recharts";
 import { TrendingUp, TrendingDown, Activity, Target, Sparkles } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 
@@ -40,6 +40,20 @@ export default function DashboardPage({ user }) {
     fetchData();
   }, [fetchData]);
 
+  // Calculate cumulative P&L for equity curve
+  const equityCurveData = useMemo(() => {
+    if (!dailyData.length) return [];
+    
+    let cumulative = 0;
+    return dailyData.map(day => {
+      cumulative += day.pnl || 0;
+      return {
+        ...day,
+        equity: cumulative
+      };
+    });
+  }, [dailyData]);
+
   if (loading) {
     return (
       <div className="loading-screen" data-testid="dashboard-loading">
@@ -55,6 +69,20 @@ export default function DashboardPage({ user }) {
           <p className="text-xs text-zinc-400 mb-1">{label}</p>
           <p className={`font-mono text-sm ${payload[0].value >= 0 ? 'text-green-500' : 'text-red-500'}`}>
             P&L: {payload[0].value >= 0 ? '+' : ''}{payload[0].value.toFixed(2)}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const EquityTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="glass rounded p-3">
+          <p className="text-xs text-zinc-400 mb-1">{label}</p>
+          <p className={`font-mono text-sm ${payload[0].value >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            Equity: {payload[0].value >= 0 ? '+' : ''}{payload[0].value.toFixed(2)}
           </p>
         </div>
       );
@@ -207,8 +235,54 @@ export default function DashboardPage({ user }) {
 
         {activeTab === 'performance' && (
           <div className="space-y-6">
+            {/* Equity Curve - NEW */}
+            <div className="stat-card animate-fadeIn" data-testid="equity-curve">
+              <p className="stat-label mb-4">Equity Curve</p>
+              {equityCurveData.length > 0 ? (
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={equityCurveData}>
+                      <defs>
+                        <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop 
+                            offset="5%" 
+                            stopColor={equityCurveData[equityCurveData.length - 1]?.equity >= 0 ? '#22C55E' : '#EF4444'} 
+                            stopOpacity={0.3}
+                          />
+                          <stop 
+                            offset="95%" 
+                            stopColor={equityCurveData[equityCurveData.length - 1]?.equity >= 0 ? '#22C55E' : '#EF4444'} 
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fill: '#71717A', fontSize: 10 }}
+                        tickFormatter={(value) => value.slice(5)}
+                      />
+                      <YAxis tick={{ fill: '#71717A', fontSize: 10 }} />
+                      <Tooltip content={<EquityTooltip />} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="equity" 
+                        stroke={equityCurveData[equityCurveData.length - 1]?.equity >= 0 ? '#22C55E' : '#EF4444'}
+                        strokeWidth={2}
+                        fill="url(#equityGradient)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-48 flex items-center justify-center text-zinc-500 text-sm">
+                  No trade data yet
+                </div>
+              )}
+            </div>
+
             {/* P&L Chart */}
-            <div className="stat-card animate-fadeIn" data-testid="pnl-chart">
+            <div className="stat-card animate-fadeIn" style={{ animationDelay: '0.1s' }} data-testid="pnl-chart">
               <p className="stat-label mb-4">Daily P&L</p>
               {dailyData.length > 0 ? (
                 <div className="h-48">
@@ -241,7 +315,7 @@ export default function DashboardPage({ user }) {
             </div>
 
             {/* Daily Trades Chart */}
-            <div className="stat-card animate-fadeIn" style={{ animationDelay: '0.1s' }} data-testid="trades-chart">
+            <div className="stat-card animate-fadeIn" style={{ animationDelay: '0.2s' }} data-testid="trades-chart">
               <p className="stat-label mb-4">Daily Trade Count</p>
               {dailyData.length > 0 ? (
                 <div className="h-40">
@@ -273,7 +347,7 @@ export default function DashboardPage({ user }) {
 
             {/* Daily Win/Loss */}
             {dailyData.length > 0 && (
-              <div className="stat-card animate-fadeIn" style={{ animationDelay: '0.2s' }} data-testid="daily-breakdown">
+              <div className="stat-card animate-fadeIn" style={{ animationDelay: '0.3s' }} data-testid="daily-breakdown">
                 <p className="stat-label mb-4">Daily Breakdown</p>
                 <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
                   {dailyData.slice().reverse().map((day, index) => (
