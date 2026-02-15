@@ -51,6 +51,11 @@ function AppRouter() {
           <ReportsPage />
         </ProtectedRoute>
       } />
+      <Route path="/history" element={
+        <ProtectedRoute>
+          <HistoryPage />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
