@@ -1,16 +1,20 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, Query
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 import httpx
+import cloudinary
+import cloudinary.utils
+import time
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
 from enum import Enum
+from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -19,6 +23,14 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
+
+# Cloudinary configuration
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
+)
 
 # Create the main app
 app = FastAPI(title="EdgeLog API", version="1.0.0")
@@ -56,7 +68,7 @@ class User(BaseModel):
     name: str
     picture: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    max_trades_per_day: int = 5  # User-defined discipline rule
+    max_trades_per_day: int = 5
 
 class UserSession(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -70,7 +82,7 @@ class Trade(BaseModel):
     model_config = ConfigDict(extra="ignore")
     trade_id: str = Field(default_factory=lambda: f"trade_{uuid.uuid4().hex[:12]}")
     user_id: str
-    trading_pair: str  # e.g., XAUUSD, EURUSD
+    trading_pair: str
     trade_type: TradeType
     entry_price: float
     stop_loss: Optional[float] = None
@@ -79,9 +91,10 @@ class Trade(BaseModel):
     trade_date: datetime
     close_price: Optional[float] = None
     outcome: TradeOutcome = TradeOutcome.OPEN
-    pnl: Optional[float] = None  # Profit/Loss in pips or currency
+    pnl: Optional[float] = None
     notes: Optional[str] = None
-    emotion_before: Optional[str] = None  # e.g., "confident", "anxious", "neutral"
+    emotion_before: Optional[str] = None
+    screenshot_url: Optional[str] = None  # NEW: Screenshot URL
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class TradeCreate(BaseModel):
@@ -94,28 +107,37 @@ class TradeCreate(BaseModel):
     trade_date: datetime
     notes: Optional[str] = None
     emotion_before: Optional[str] = None
+    screenshot_url: Optional[str] = None  # NEW: Screenshot URL
 
 class TradeUpdate(BaseModel):
     close_price: Optional[float] = None
     outcome: Optional[TradeOutcome] = None
     pnl: Optional[float] = None
     notes: Optional[str] = None
+    screenshot_url: Optional[str] = None
 
 class DisciplineSettings(BaseModel):
     max_trades_per_day: int = 5
 
 class ReminderSettings(BaseModel):
     daily_reminder_enabled: bool = False
-    reminder_time: Optional[str] = None  # e.g., "20:00"
+    reminder_time: Optional[str] = None
+
+class AIReport(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    report_id: str = Field(default_factory=lambda: f"report_{uuid.uuid4().hex[:12]}")
+    user_id: str
+    period: str  # "weekly" or "monthly"
+    report_data: dict
+    ai_insights: str
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # ==================== AUTH HELPERS ====================
 
 async def get_current_user(request: Request) -> User:
     """Get current user from session token (cookie or header)"""
-    # Try cookie first
     session_token = request.cookies.get("session_token")
     
-    # Fallback to Authorization header
     if not session_token:
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
@@ -124,7 +146,6 @@ async def get_current_user(request: Request) -> User:
     if not session_token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
-    # Find session
     session_doc = await db.user_sessions.find_one(
         {"session_token": session_token},
         {"_id": 0}
@@ -133,7 +154,6 @@ async def get_current_user(request: Request) -> User:
     if not session_doc:
         raise HTTPException(status_code=401, detail="Invalid session")
     
-    # Check expiry
     expires_at = session_doc["expires_at"]
     if isinstance(expires_at, str):
         expires_at = datetime.fromisoformat(expires_at)
@@ -142,7 +162,6 @@ async def get_current_user(request: Request) -> User:
     if expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=401, detail="Session expired")
     
-    # Get user
     user_doc = await db.users.find_one(
         {"user_id": session_doc["user_id"]},
         {"_id": 0}
@@ -164,7 +183,6 @@ async def create_session(request: Request, response: Response):
     if not session_id:
         raise HTTPException(status_code=400, detail="session_id required")
     
-    # Call Emergent Auth to get user data
     async with httpx.AsyncClient() as client_http:
         try:
             auth_response = await client_http.get(
@@ -179,7 +197,6 @@ async def create_session(request: Request, response: Response):
             logger.error(f"Auth error: {e}")
             raise HTTPException(status_code=401, detail="Authentication failed")
     
-    # Check if user exists
     existing_user = await db.users.find_one(
         {"email": user_data["email"]},
         {"_id": 0}
@@ -187,7 +204,6 @@ async def create_session(request: Request, response: Response):
     
     if existing_user:
         user_id = existing_user["user_id"]
-        # Update user info
         await db.users.update_one(
             {"user_id": user_id},
             {"$set": {
@@ -196,7 +212,6 @@ async def create_session(request: Request, response: Response):
             }}
         )
     else:
-        # Create new user
         user_id = f"user_{uuid.uuid4().hex[:12]}"
         new_user = {
             "user_id": user_id,
@@ -208,7 +223,6 @@ async def create_session(request: Request, response: Response):
         }
         await db.users.insert_one(new_user)
     
-    # Create session
     session_token = user_data.get("session_token", f"session_{uuid.uuid4().hex}")
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
     
@@ -221,7 +235,6 @@ async def create_session(request: Request, response: Response):
     }
     await db.user_sessions.insert_one(session_doc)
     
-    # Set cookie
     response.set_cookie(
         key="session_token",
         value=session_token,
@@ -232,7 +245,6 @@ async def create_session(request: Request, response: Response):
         max_age=7 * 24 * 60 * 60
     )
     
-    # Get user data to return
     user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
     
     return {"user": user_doc, "session_token": session_token}
@@ -252,6 +264,39 @@ async def logout(request: Request, response: Response):
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}
 
+# ==================== CLOUDINARY ENDPOINTS ====================
+
+@api_router.get("/cloudinary/signature")
+async def generate_cloudinary_signature(
+    resource_type: str = Query("image", enum=["image", "video"]),
+    folder: str = "trades",
+    user: User = Depends(get_current_user)
+):
+    """Generate signed upload params for Cloudinary"""
+    # Create user-specific folder
+    user_folder = f"edgelog/{user.user_id}/{folder}"
+    
+    timestamp = int(time.time())
+    params = {
+        "timestamp": timestamp,
+        "folder": user_folder,
+        "resource_type": resource_type
+    }
+    
+    signature = cloudinary.utils.api_sign_request(
+        params,
+        os.getenv("CLOUDINARY_API_SECRET")
+    )
+    
+    return {
+        "signature": signature,
+        "timestamp": timestamp,
+        "cloud_name": os.getenv("CLOUDINARY_CLOUD_NAME"),
+        "api_key": os.getenv("CLOUDINARY_API_KEY"),
+        "folder": user_folder,
+        "resource_type": resource_type
+    }
+
 # ==================== TRADE ENDPOINTS ====================
 
 @api_router.post("/trades", response_model=dict)
@@ -268,7 +313,6 @@ async def create_trade(trade_data: TradeCreate, user: User = Depends(get_current
     
     await db.trades.insert_one(trade_doc)
     
-    # Return without _id
     trade_doc.pop("_id", None)
     return trade_doc
 
@@ -304,8 +348,7 @@ async def get_today_trades(user: User = Depends(get_current_user)):
 
 @api_router.put("/trades/{trade_id}")
 async def update_trade(trade_id: str, trade_update: TradeUpdate, user: User = Depends(get_current_user)):
-    """Update a trade (close it, set outcome, etc.)"""
-    # Check trade exists and belongs to user
+    """Update a trade"""
     existing = await db.trades.find_one(
         {"trade_id": trade_id, "user_id": user.user_id},
         {"_id": 0}
@@ -345,7 +388,6 @@ async def get_analytics_summary(user: User = Depends(get_current_user)):
     cutoff_date = datetime.now(timezone.utc) - timedelta(days=FREE_PLAN_DAYS)
     today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     
-    # Get all trades within free plan period
     all_trades = await db.trades.find(
         {
             "user_id": user.user_id,
@@ -354,10 +396,8 @@ async def get_analytics_summary(user: User = Depends(get_current_user)):
         {"_id": 0}
     ).to_list(1000)
     
-    # Get today's trades
     today_trades = [t for t in all_trades if t.get("trade_date", "") >= today_start.isoformat()]
     
-    # Calculate stats
     total_trades = len(all_trades)
     today_count = len(today_trades)
     
@@ -366,14 +406,11 @@ async def get_analytics_summary(user: User = Depends(get_current_user)):
     breakevens = len([t for t in all_trades if t.get("outcome") == "breakeven"])
     open_trades = len([t for t in all_trades if t.get("outcome") == "open"])
     
-    # Win rate
     closed_trades = wins + losses + breakevens
     win_rate = (wins / closed_trades * 100) if closed_trades > 0 else 0
     
-    # Total P&L
     total_pnl = sum(t.get("pnl", 0) or 0 for t in all_trades)
     
-    # Average Risk-Reward (for trades with SL and TP)
     rr_ratios = []
     for t in all_trades:
         if t.get("stop_loss") and t.get("take_profit") and t.get("entry_price"):
@@ -387,15 +424,12 @@ async def get_analytics_summary(user: User = Depends(get_current_user)):
     
     avg_rr = sum(rr_ratios) / len(rr_ratios) if rr_ratios else 0
     
-    # Discipline score
     max_trades = user.max_trades_per_day
     discipline_score = 100
     if today_count > max_trades:
-        # Reduce score by 10% for each extra trade
         over_trades = today_count - max_trades
         discipline_score = max(0, 100 - (over_trades * 20))
     
-    # Days remaining
     days_remaining = FREE_PLAN_DAYS
     
     return {
@@ -426,10 +460,9 @@ async def get_daily_analytics(user: User = Depends(get_current_user)):
         {"_id": 0}
     ).to_list(1000)
     
-    # Group by date
     daily_data = {}
     for trade in trades:
-        trade_date = trade.get("trade_date", "")[:10]  # Get YYYY-MM-DD
+        trade_date = trade.get("trade_date", "")[:10]
         if trade_date not in daily_data:
             daily_data[trade_date] = {"date": trade_date, "trades": 0, "pnl": 0, "wins": 0, "losses": 0}
         
@@ -441,9 +474,193 @@ async def get_daily_analytics(user: User = Depends(get_current_user)):
         elif trade.get("outcome") == "loss":
             daily_data[trade_date]["losses"] += 1
     
-    # Sort by date
     result = sorted(daily_data.values(), key=lambda x: x["date"])
     return result
+
+# ==================== AI REPORT GENERATION ====================
+
+@api_router.post("/reports/generate")
+async def generate_ai_report(
+    period: str = Query("weekly", enum=["weekly", "monthly"]),
+    user: User = Depends(get_current_user)
+):
+    """Generate AI-powered performance report"""
+    # Determine date range
+    if period == "weekly":
+        days = 7
+    else:
+        days = 30
+    
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    # Get trades for the period
+    trades = await db.trades.find(
+        {
+            "user_id": user.user_id,
+            "created_at": {"$gte": cutoff_date.isoformat()}
+        },
+        {"_id": 0}
+    ).to_list(1000)
+    
+    if not trades:
+        return {
+            "report_id": f"report_{uuid.uuid4().hex[:12]}",
+            "period": period,
+            "report_data": {
+                "total_trades": 0,
+                "wins": 0,
+                "losses": 0,
+                "win_rate": 0,
+                "total_pnl": 0,
+                "best_pair": None,
+                "worst_pair": None
+            },
+            "ai_insights": "No trades found for this period. Start logging your trades to get AI-powered insights!",
+            "generated_at": datetime.now(timezone.utc).isoformat()
+        }
+    
+    # Calculate statistics
+    total_trades = len(trades)
+    wins = len([t for t in trades if t.get("outcome") == "win"])
+    losses = len([t for t in trades if t.get("outcome") == "loss"])
+    breakevens = len([t for t in trades if t.get("outcome") == "breakeven"])
+    
+    closed_trades = wins + losses + breakevens
+    win_rate = (wins / closed_trades * 100) if closed_trades > 0 else 0
+    total_pnl = sum(t.get("pnl", 0) or 0 for t in trades)
+    
+    # Analyze by trading pair
+    pair_stats = {}
+    for trade in trades:
+        pair = trade.get("trading_pair", "Unknown")
+        if pair not in pair_stats:
+            pair_stats[pair] = {"wins": 0, "losses": 0, "pnl": 0, "count": 0}
+        pair_stats[pair]["count"] += 1
+        pair_stats[pair]["pnl"] += trade.get("pnl", 0) or 0
+        if trade.get("outcome") == "win":
+            pair_stats[pair]["wins"] += 1
+        elif trade.get("outcome") == "loss":
+            pair_stats[pair]["losses"] += 1
+    
+    # Find best and worst pairs
+    best_pair = max(pair_stats.items(), key=lambda x: x[1]["pnl"]) if pair_stats else (None, {})
+    worst_pair = min(pair_stats.items(), key=lambda x: x[1]["pnl"]) if pair_stats else (None, {})
+    
+    # Analyze by emotion
+    emotion_stats = {}
+    for trade in trades:
+        emotion = trade.get("emotion_before", "unknown") or "unknown"
+        if emotion not in emotion_stats:
+            emotion_stats[emotion] = {"wins": 0, "losses": 0, "count": 0}
+        emotion_stats[emotion]["count"] += 1
+        if trade.get("outcome") == "win":
+            emotion_stats[emotion]["wins"] += 1
+        elif trade.get("outcome") == "loss":
+            emotion_stats[emotion]["losses"] += 1
+    
+    # Analyze by trade type
+    buy_trades = [t for t in trades if t.get("trade_type") == "buy"]
+    sell_trades = [t for t in trades if t.get("trade_type") == "sell"]
+    
+    buy_wins = len([t for t in buy_trades if t.get("outcome") == "win"])
+    sell_wins = len([t for t in sell_trades if t.get("outcome") == "win"])
+    
+    # Generate AI insights using GPT-5.2
+    report_data = {
+        "total_trades": total_trades,
+        "wins": wins,
+        "losses": losses,
+        "breakevens": breakevens,
+        "win_rate": round(win_rate, 1),
+        "total_pnl": round(total_pnl, 2),
+        "best_pair": {"name": best_pair[0], "pnl": round(best_pair[1].get("pnl", 0), 2)} if best_pair[0] else None,
+        "worst_pair": {"name": worst_pair[0], "pnl": round(worst_pair[1].get("pnl", 0), 2)} if worst_pair[0] else None,
+        "pair_stats": {k: {"wins": v["wins"], "losses": v["losses"], "pnl": round(v["pnl"], 2)} for k, v in pair_stats.items()},
+        "emotion_stats": emotion_stats,
+        "buy_stats": {"count": len(buy_trades), "wins": buy_wins},
+        "sell_stats": {"count": len(sell_trades), "wins": sell_wins},
+        "period": period,
+        "user_name": user.name
+    }
+    
+    # Create AI prompt
+    prompt = f"""You are a professional trading coach analyzing a trader's performance. Generate a brief, actionable performance report.
+
+TRADER DATA ({period} period):
+- Total Trades: {total_trades}
+- Wins: {wins} | Losses: {losses} | Breakeven: {breakevens}
+- Win Rate: {win_rate:.1f}%
+- Total P&L: {total_pnl:.2f}
+- Best Performing Pair: {best_pair[0]} (P&L: {best_pair[1].get('pnl', 0):.2f})
+- Worst Performing Pair: {worst_pair[0]} (P&L: {worst_pair[1].get('pnl', 0):.2f})
+- Buy Trades: {len(buy_trades)} ({buy_wins} wins)
+- Sell Trades: {len(sell_trades)} ({sell_wins} wins)
+- Trading Pairs: {', '.join(pair_stats.keys())}
+- Emotions logged: {', '.join(emotion_stats.keys())}
+
+Generate a concise performance summary (3-4 sentences max) highlighting:
+1. Overall performance assessment
+2. Key strength or pattern
+3. One specific improvement suggestion
+
+Keep it professional, motivating, and actionable. Use trader's first name: {user.name.split()[0]}."""
+
+    try:
+        chat = LlmChat(
+            api_key=os.getenv("EMERGENT_LLM_KEY"),
+            session_id=f"report_{user.user_id}_{period}",
+            system_message="You are a professional trading performance analyst. Be concise, insightful, and actionable."
+        ).with_model("openai", "gpt-5.2")
+        
+        user_message = UserMessage(text=prompt)
+        ai_insights = await chat.send_message(user_message)
+        
+    except Exception as e:
+        logger.error(f"AI generation error: {e}")
+        # Fallback insights
+        if win_rate >= 60:
+            ai_insights = f"Great {period}! Your {win_rate:.0f}% win rate shows solid execution. Focus on {best_pair[0]} where you're performing best."
+        elif win_rate >= 40:
+            ai_insights = f"Decent {period} with room to grow. Consider reducing position sizes on {worst_pair[0]} and stick to your discipline rules."
+        else:
+            ai_insights = f"Challenging {period}. Review your {worst_pair[0]} trades and consider taking fewer, higher-quality setups."
+    
+    # Save report
+    report_doc = {
+        "report_id": f"report_{uuid.uuid4().hex[:12]}",
+        "user_id": user.user_id,
+        "period": period,
+        "report_data": report_data,
+        "ai_insights": ai_insights,
+        "generated_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.reports.insert_one(report_doc)
+    report_doc.pop("_id", None)
+    
+    return report_doc
+
+@api_router.get("/reports")
+async def get_reports(user: User = Depends(get_current_user)):
+    """Get all reports for user"""
+    reports = await db.reports.find(
+        {"user_id": user.user_id},
+        {"_id": 0}
+    ).sort("generated_at", -1).to_list(50)
+    
+    return reports
+
+@api_router.get("/reports/{report_id}")
+async def get_report(report_id: str, user: User = Depends(get_current_user)):
+    """Get a specific report"""
+    report = await db.reports.find_one(
+        {"report_id": report_id, "user_id": user.user_id},
+        {"_id": 0}
+    )
+    
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    return report
 
 # ==================== SETTINGS ENDPOINTS ====================
 
@@ -452,7 +669,7 @@ async def update_discipline_settings(
     settings: DisciplineSettings,
     user: User = Depends(get_current_user)
 ):
-    """Update discipline settings (max trades per day)"""
+    """Update discipline settings"""
     await db.users.update_one(
         {"user_id": user.user_id},
         {"$set": {"max_trades_per_day": settings.max_trades_per_day}}
@@ -489,7 +706,7 @@ async def update_reminder_settings(
 
 @api_router.post("/admin/cleanup-old-trades")
 async def cleanup_old_trades():
-    """Cleanup trades older than 14 days (run as cron job)"""
+    """Cleanup trades older than 14 days"""
     cutoff_date = datetime.now(timezone.utc) - timedelta(days=FREE_PLAN_DAYS)
     result = await db.trades.delete_many(
         {"created_at": {"$lt": cutoff_date.isoformat()}}
