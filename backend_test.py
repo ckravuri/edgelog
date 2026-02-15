@@ -10,8 +10,8 @@ import json
 
 # Test configuration
 BASE_URL = "https://create-anything-39.preview.emergentagent.com/api"
-SESSION_TOKEN = "test_session_1771145804897"  # From MongoDB setup
-USER_ID = "test-user-1771145804897"  # From MongoDB setup
+SESSION_TOKEN = "test_session_1771146088181"  # From agent context note
+USER_ID = "test-user-1771146088181"  # From agent context note
 
 class EdgeLogAPITester:
     def __init__(self, base_url=BASE_URL, session_token=SESSION_TOKEN):
