@@ -1,0 +1,163 @@
+{
+  "identity": {
+    "name": "EdgeLog",
+    "description": "A high-performance trading journal for serious traders. Dark, minimal, and data-centric.",
+    "archetype": "The Performance Pro",
+    "tone": "Professional, Disciplined, Sharp, Clinical"
+  },
+  "theme": {
+    "mode": "dark",
+    "strategy": "forced_dark",
+    "reasoning": "Trading apps require reduced eye strain for long sessions. Dark mode is the industry standard (Bloomberg/TradingView)."
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Barlow Condensed, sans-serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-4xl font-bold tracking-tight uppercase",
+      "h2": "text-2xl font-semibold tracking-tight",
+      "h3": "text-xl font-medium tracking-normal",
+      "body": "text-base font-normal tracking-wide",
+      "caption": "text-xs font-medium tracking-widest uppercase text-muted-foreground",
+      "data": "font-mono text-sm tracking-tight"
+    },
+    "installation": {
+      "google_fonts_url": "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    }
+  },
+  "colors": {
+    "palette": {
+      "background": "#050505",
+      "foreground": "#FAFAFA",
+      "card": "#0A0A0A",
+      "card_foreground": "#FFFFFF",
+      "popover": "#111111",
+      "popover_foreground": "#FFFFFF",
+      "primary": "#FFFFFF",
+      "primary_foreground": "#000000",
+      "secondary": "#27272A",
+      "secondary_foreground": "#FFFFFF",
+      "muted": "#27272A",
+      "muted_foreground": "#A1A1AA",
+      "accent": "#27272A",
+      "accent_foreground": "#FFFFFF",
+      "destructive": "#7F1D1D",
+      "destructive_foreground": "#FFFFFF",
+      "border": "#27272A",
+      "input": "#27272A",
+      "ring": "#FFFFFF"
+    },
+    "trading_specific": {
+      "buy": "#22C55E",
+      "buy_dim": "rgba(34, 197, 94, 0.2)",
+      "sell": "#EF4444",
+      "sell_dim": "rgba(239, 68, 68, 0.2)",
+      "neutral": "#94A3B8",
+      "chart_grid": "#334155"
+    },
+    "utils": {
+      "glass": "bg-black/60 backdrop-blur-xl border-white/10",
+      "neon_glow_green": "shadow-[0_0_15px_rgba(34,197,94,0.4)]",
+      "neon_glow_red": "shadow-[0_0_15px_rgba(239,68,68,0.4)]"
+    }
+  },
+  "layout": {
+    "spacing_scale": {
+      "section_gap": "py-12",
+      "card_padding": "p-6",
+      "element_gap": "gap-4"
+    },
+    "grid_strategy": "Bento Grid",
+    "container": "max-w-md mx-auto min-h-screen bg-background text-foreground overflow-hidden relative shadow-2xl border-x border-white/5",
+    "mobile_optimization": {
+      "touch_targets": "min-h-[48px]",
+      "bottom_nav_height": "h-16",
+      "safe_area_bottom": "pb-safe"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-white text-black hover:bg-gray-200 font-bold uppercase tracking-wider h-12 rounded-sm",
+      "secondary": "bg-white/10 text-white hover:bg-white/20 font-medium h-12 rounded-sm",
+      "ghost": "hover:bg-white/5 text-gray-400 hover:text-white",
+      "trade_buy": "bg-green-600 text-white hover:bg-green-500 font-bold w-full h-14 rounded-sm shadow-[0_0_20px_rgba(34,197,94,0.3)]",
+      "trade_sell": "bg-red-600 text-white hover:bg-red-500 font-bold w-full h-14 rounded-sm shadow-[0_0_20px_rgba(239,68,68,0.3)]"
+    },
+    "cards": {
+      "base": "bg-[#0A0A0A] border border-white/10 rounded-lg shadow-sm",
+      "hover_effect": "hover:border-white/20 transition-all duration-300",
+      "glass": "bg-white/5 backdrop-blur-md border border-white/10"
+    },
+    "inputs": {
+      "base": "bg-[#111111] border-white/10 text-white placeholder:text-gray-600 h-12 rounded-sm focus:ring-1 focus:ring-white/50 focus:border-white/50",
+      "label": "text-xs font-bold uppercase tracking-widest text-gray-500 mb-2 block"
+    },
+    "navigation": {
+      "bottom_bar": "fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 h-16 flex justify-around items-center z-50",
+      "active_tab": "text-white",
+      "inactive_tab": "text-gray-600 hover:text-gray-400"
+    }
+  },
+  "visual_enhancers": {
+    "surface_strategy": "The Performance Pro",
+    "textures": {
+      "noise": "bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay fixed inset-0 pointer-events-none z-0"
+    },
+    "borders": {
+      "grid_lines": "border-r border-b border-white/5"
+    }
+  },
+  "media": {
+    "images": [
+      {
+        "category": "background",
+        "url": "https://images.unsplash.com/photo-1760978631959-87fa2724d6e9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNzl8MHwxfHNlYXJjaHwzfHxmdXR1cmlzdGljJTIwZGFyayUyMGFic3RyYWN0JTIwZGF0YSUyMGJhY2tncm91bmQlMjBncmlkfGVufDB8fHx8MTc3MTE0NTMwM3ww&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract metallic dark grid for Login/Auth background",
+        "usage": "Use with heavy dark overlay (bg-black/80) on Auth screens"
+      },
+      {
+        "category": "logo",
+        "url": "",
+        "description": "Use stylized text 'EDGELOG' in Barlow Condensed font, spacing-widest",
+        "usage": "Header"
+      }
+    ],
+    "icons": {
+      "library": "lucide-react",
+      "style": "stroke-1"
+    }
+  },
+  "accessibility": {
+    "rules": [
+      "Ensure 4.5:1 contrast for all text (Gray-400 on Black is borderline, use Gray-300 for important text)",
+      "Touch targets must be 44x44px minimum",
+      "Avoid relying on color alone for Buy/Sell (use icons/arrows too)"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Install 'recharts' for charts.",
+    "Install 'lucide-react' for icons.",
+    "Use 'Barlow Condensed' for all headings to give that 'Trader' look.",
+    "Use 'JetBrains Mono' for all pricing data and financial numbers.",
+    "Implement the Bottom Navigation Bar as a layout wrapper for authenticated screens.",
+    "The 'Add Trade' button should be the prominent center action in the nav bar.",
+    "Use the 'Bento Grid' strategy for the Dashboard stats (Win Rate, P&L, etc.).",
+    "Ensure the 'Free Plan' countdown is visible but not annoying (maybe a thin top banner or a dashboard card).",
+    "For the 'Discipline Score', use a circular progress bar or a gauge chart."
+  ],
+  "UNIVERSAL_GUIDELINES": [
+    "You tend to converge toward generic outputs. Avoid this.",
+    "Dark colors look good when used independently without gradients.",
+    "Don't make generic centered layouts.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters.",
+    "NEVER use AI assistant Emoji characters.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "Subtle grain textures separates good from extraordinary.",
+    "All interactive elements MUST include data-testid attributes."
+  ]
+}
