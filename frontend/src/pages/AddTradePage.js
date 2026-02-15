@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, TrendingUp, TrendingDown, X } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, X, Camera, Image, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 
@@ -15,8 +15,11 @@ const EMOTIONS = ['Confident', 'Anxious', 'Neutral', 'FOMO', 'Revenge', 'Discipl
 
 export default function AddTradePage({ user }) {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [showPairs, setShowPairs] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   
   const [form, setForm] = useState({
     trading_pair: '',
@@ -27,11 +30,80 @@ export default function AddTradePage({ user }) {
     lot_size: '0.01',
     trade_date: new Date().toISOString().slice(0, 16),
     notes: '',
-    emotion_before: ''
+    emotion_before: '',
+    screenshot_url: ''
   });
 
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be less than 10MB');
+      return;
+    }
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = (e) => setPreviewImage(e.target.result);
+    reader.readAsDataURL(file);
+
+    // Upload to Cloudinary
+    setUploading(true);
+    try {
+      // Get signature from backend
+      const sigResponse = await fetch(`${API}/cloudinary/signature?resource_type=image&folder=screenshots`, {
+        credentials: 'include'
+      });
+      
+      if (!sigResponse.ok) throw new Error('Failed to get upload signature');
+      const sig = await sigResponse.json();
+
+      // Upload to Cloudinary
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', sig.api_key);
+      formData.append('timestamp', sig.timestamp);
+      formData.append('signature', sig.signature);
+      formData.append('folder', sig.folder);
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`,
+        { method: 'POST', body: formData }
+      );
+
+      if (!uploadResponse.ok) throw new Error('Upload failed');
+      
+      const result = await uploadResponse.json();
+      handleChange('screenshot_url', result.secure_url);
+      toast.success('Screenshot uploaded!');
+      
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload screenshot');
+      setPreviewImage(null);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setPreviewImage(null);
+    handleChange('screenshot_url', '');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -51,7 +123,8 @@ export default function AddTradePage({ user }) {
         stop_loss: form.stop_loss ? parseFloat(form.stop_loss) : null,
         take_profit: form.take_profit ? parseFloat(form.take_profit) : null,
         lot_size: parseFloat(form.lot_size),
-        trade_date: new Date(form.trade_date).toISOString()
+        trade_date: new Date(form.trade_date).toISOString(),
+        screenshot_url: form.screenshot_url || null
       };
       
       const response = await fetch(`${API}/trades`, {
@@ -88,7 +161,7 @@ export default function AddTradePage({ user }) {
           <ArrowLeft className="w-5 h-5 text-white" />
         </button>
         <h1 className="font-heading text-xl font-bold tracking-wider uppercase">New Trade</h1>
-        <div className="w-9" /> {/* Spacer */}
+        <div className="w-9" />
       </header>
 
       {/* Form */}
@@ -231,6 +304,63 @@ export default function AddTradePage({ user }) {
           />
         </div>
 
+        {/* Screenshot Upload - NEW */}
+        <div className="form-group animate-fadeIn" style={{ animationDelay: '0.22s' }}>
+          <label className="form-label">Trade Screenshot</label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+            data-testid="screenshot-input"
+          />
+          
+          {!previewImage ? (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="w-full h-32 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-white/20 hover:bg-white/5 transition-all"
+              data-testid="upload-screenshot-btn"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
+                  <span className="text-xs text-zinc-500">Uploading...</span>
+                </>
+              ) : (
+                <>
+                  <Camera className="w-8 h-8 text-zinc-500" />
+                  <span className="text-xs text-zinc-500">Tap to add chart screenshot</span>
+                </>
+              )}
+            </button>
+          ) : (
+            <div className="relative">
+              <img 
+                src={previewImage} 
+                alt="Trade screenshot" 
+                className="w-full h-40 object-cover rounded-lg border border-white/10"
+                data-testid="screenshot-preview"
+              />
+              <button
+                type="button"
+                onClick={removeImage}
+                className="absolute top-2 right-2 w-8 h-8 bg-black/80 rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
+                data-testid="remove-screenshot-btn"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              {uploading && (
+                <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Emotion */}
         <div className="form-group animate-fadeIn" style={{ animationDelay: '0.25s' }}>
           <label className="form-label">Emotion Before Trade</label>
@@ -269,7 +399,7 @@ export default function AddTradePage({ user }) {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || uploading}
           className={`w-full h-14 rounded font-heading text-lg font-bold uppercase tracking-wider transition-all ${
             form.trade_type === 'buy'
               ? 'bg-green-600 hover:bg-green-500 text-white buy-glow'
