@@ -34,22 +34,33 @@ EdgeLog is a professional trading journal PWA designed for traders to track, ana
 - [x] **Screenshot Upload** - Cloudinary integration for trade chart screenshots
 - [x] **AI Performance Reports** - GPT-5.2 powered weekly/monthly insights
 - [x] **Social Sharing** - Twitter, Facebook, WhatsApp share buttons
-- [x] **Download as Image** - Export report card as PNG
+- [x] **Download as Image** - Export professional report card as PNG
 - [x] Screenshot modal viewer for full-size images
 - [x] Report card with professional design and watermark
+
+### Version 1.2 - Trade Management (Feb 15, 2026)
+- [x] **Trade Closing Flow** - Slide-up modal to mark trades as Win/Loss/Breakeven
+- [x] Close price input with auto-P&L calculation
+- [x] Quick P&L buttons (-100, -50, -25, +25, +50, +100, +200)
+- [x] **Trade History Page** - Full trade list with search and filters
+- [x] Filter by: All, Open, Wins, Losses
+- [x] Summary stats bar (Trades, Wins, Losses, P&L)
+- [x] **Equity Curve Chart** - Cumulative P&L visualization over time
+- [x] **Trade Edit/Delete** - Edit notes, delete trades from modal
+- [x] Click interactions: Open trades → Close modal, Closed trades → Edit modal
 
 ## Architecture
 ```
 Frontend (React PWA)
-├── Pages: Login, Home, AddTrade, Dashboard, Settings, Reports
-├── Components: BottomNav, TradeCard, DisciplineRing
+├── Pages: Login, Home, AddTrade, Dashboard, Settings, Reports, History
+├── Components: BottomNav, TradeCard, DisciplineRing, CloseTradeModal, EditTradeModal
 └── Styling: Tailwind CSS with custom dark theme
 
 Backend (FastAPI)
 ├── Auth: Emergent OAuth integration
 ├── Trades: CRUD with 14-day retention
-├── Analytics: Summary, daily breakdown
-├── Reports: AI-powered generation
+├── Analytics: Summary, daily breakdown, equity curve data
+├── Reports: AI-powered generation with GPT-5.2
 ├── Cloudinary: Signed upload signatures
 └── Settings: Discipline rules, reminders
 
@@ -73,31 +84,35 @@ Database (MongoDB)
 
 ### P0 (Critical)
 - [ ] Apple Sign-In activation (pending Apple Developer account)
-- [ ] Trade closing flow UI (mark as win/loss with P&L)
+- [ ] App Store submission preparation
 
-### P1 (High Priority)
+### P1 (High Priority - Premium Features)
 - [ ] Push notifications via Firebase
 - [ ] Trade import from CSV
 - [ ] Extended analytics (by emotion, by session, by pair)
+- [ ] Trading Rules Checklist
+- [ ] Journal Notes Page
+- [ ] Streak & Achievements
 
-### P2 (Nice to Have)
+### P2 (Future Premium)
 - [ ] Premium plan with unlimited history
 - [ ] Broker API integration (MT4/MT5, TradingView)
 - [ ] Instagram story format for sharing
-- [ ] Streak tracking and achievements
 - [ ] Multiple account support
+- [ ] Dark/Light Theme Toggle
 
 ## Next Tasks
-1. Implement trade closing modal with outcome selection
-2. Add Firebase for real push notifications
-3. Create premium upgrade flow
-4. Add more chart types (equity curve, drawdown)
+1. Wait for Google/Apple Developer account approvals
+2. Prepare app icons and splash screens for submission
+3. Create premium upgrade flow and pricing page
+4. Add Firebase for real push notifications
 
 ## Technical Notes
 - Backend URL: REACT_APP_BACKEND_URL from .env
 - Auth uses httpOnly cookies with 7-day expiry
 - Images stored in Cloudinary under user-specific folders
 - AI reports use Emergent LLM Key for GPT-5.2
+- Equity curve calculated as cumulative sum of daily P&L
 
 ---
 Last Updated: February 15, 2026
