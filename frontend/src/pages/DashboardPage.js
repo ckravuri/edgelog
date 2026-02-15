@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, LineChart, Line, Tooltip, CartesianGrid } from "recharts";
-import { TrendingUp, TrendingDown, Activity, Target } from "lucide-react";
+import { TrendingUp, TrendingDown, Activity, Target, Sparkles } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
 export default function DashboardPage({ user }) {
+  const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(null);
   const [dailyData, setDailyData] = useState([]);
   const [loading, setLoading] = useState(true);
