@@ -88,6 +88,14 @@ export default function DashboardPage({ user }) {
             {tab}
           </button>
         ))}
+        <button
+          onClick={() => navigate('/reports')}
+          className="ml-auto px-4 py-2 rounded text-xs font-semibold uppercase tracking-wider bg-gradient-to-r from-purple-600/20 to-blue-600/20 text-purple-400 hover:from-purple-600/30 hover:to-blue-600/30 border border-purple-500/30 flex items-center gap-1.5 transition-all"
+          data-testid="ai-reports-btn"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          AI Report
+        </button>
       </div>
 
       <div className="px-5 py-6">
