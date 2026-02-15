@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, TrendingUp, TrendingDown, Clock } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, Clock, ChevronRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import DisciplineRing from "@/components/DisciplineRing";
 import TradeCard from "@/components/TradeCard";
+import CloseTradeModal from "@/components/CloseTradeModal";
+import EditTradeModal from "@/components/EditTradeModal";
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
@@ -13,6 +15,8 @@ export default function HomePage({ user }) {
   const [todayTrades, setTodayTrades] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedTrade, setSelectedTrade] = useState(null);
+  const [modalType, setModalType] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -44,6 +48,24 @@ export default function HomePage({ user }) {
 
   const handleRefresh = () => {
     setRefreshing(true);
+    fetchData();
+  };
+
+  const handleTradeClick = (trade) => {
+    setSelectedTrade(trade);
+    if (trade.outcome === 'open') {
+      setModalType('close');
+    } else {
+      setModalType('edit');
+    }
+  };
+
+  const handleModalClose = () => {
+    setSelectedTrade(null);
+    setModalType(null);
+  };
+
+  const handleTradeUpdated = () => {
     fetchData();
   };
 
@@ -138,19 +160,34 @@ export default function HomePage({ user }) {
             <h2 className="font-heading text-lg font-semibold tracking-wide uppercase">
               Today's Trades
             </h2>
-            <button 
-              onClick={() => navigate('/add-trade')}
-              className="text-xs text-green-500 font-semibold uppercase tracking-wider hover:text-green-400 transition-colors"
-              data-testid="add-trade-link"
-            >
-              + Add Trade
-            </button>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => navigate('/history')}
+                className="text-xs text-zinc-400 font-semibold uppercase tracking-wider hover:text-white transition-colors flex items-center gap-1"
+                data-testid="view-history-link"
+              >
+                History <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              <button 
+                onClick={() => navigate('/add-trade')}
+                className="text-xs text-green-500 font-semibold uppercase tracking-wider hover:text-green-400 transition-colors"
+                data-testid="add-trade-link"
+              >
+                + Add Trade
+              </button>
+            </div>
           </div>
           
           {todayTrades.length > 0 ? (
             <div className="space-y-3" data-testid="trades-list">
               {todayTrades.map((trade, index) => (
-                <TradeCard key={trade.trade_id} trade={trade} style={{ animationDelay: `${0.1 * index}s` }} />
+                <div 
+                  key={trade.trade_id} 
+                  onClick={() => handleTradeClick(trade)}
+                  className="cursor-pointer"
+                >
+                  <TradeCard trade={trade} style={{ animationDelay: `${0.1 * index}s` }} />
+                </div>
               ))}
             </div>
           ) : (
@@ -164,6 +201,24 @@ export default function HomePage({ user }) {
           )}
         </div>
       </div>
+
+      {/* Close Trade Modal */}
+      {selectedTrade && modalType === 'close' && (
+        <CloseTradeModal
+          trade={selectedTrade}
+          onClose={handleModalClose}
+          onTradeUpdated={handleTradeUpdated}
+        />
+      )}
+
+      {/* Edit Trade Modal */}
+      {selectedTrade && modalType === 'edit' && (
+        <EditTradeModal
+          trade={selectedTrade}
+          onClose={handleModalClose}
+          onTradeUpdated={handleTradeUpdated}
+        />
+      )}
 
       <BottomNav active="home" />
     </div>
