@@ -11,6 +11,7 @@ import AddTradePage from "@/pages/AddTradePage";
 import DashboardPage from "@/pages/DashboardPage";
 import SettingsPage from "@/pages/SettingsPage";
 import ReportsPage from "@/pages/ReportsPage";
+import HistoryPage from "@/pages/HistoryPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function AppRouter() {
