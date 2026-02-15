@@ -327,9 +327,10 @@ class EdgeLogAPITester:
 
     def run_all_tests(self):
         """Run all API tests"""
-        print(f"🚀 Starting EdgeLog API Tests")
+        print(f"🚀 Starting EdgeLog API Tests with NEW FEATURES")
         print(f"Backend URL: {self.base_url}")
         print(f"Session Token: {self.session_token[:20]}...")
+        print(f"Testing NEW Features: Cloudinary, AI Reports, Screenshot uploads")
         
         # Test in logical order
         self.test_health_endpoints()
@@ -338,7 +339,15 @@ class EdgeLogAPITester:
             print("❌ Authentication failed, skipping protected endpoints")
             return self.get_results()
         
+        # Test core features first
         self.test_trade_endpoints()
+        
+        # Test NEW features
+        self.test_cloudinary_endpoints()
+        self.test_ai_reports_endpoints()  
+        self.test_trade_with_screenshot()
+        
+        # Test remaining features
         self.test_analytics_endpoints()
         self.test_settings_endpoints()
         
