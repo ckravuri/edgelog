@@ -102,7 +102,8 @@ export default function LoginPage() {
       
       {/* Footer */}
       <p className="text-xs text-zinc-600 mt-12 text-center animate-fadeIn" style={{ animationDelay: '0.4s' }}>
-        By continuing, you agree to our Terms of Service<br />and Privacy Policy
+        By continuing, you agree to our{' '}
+        <a href="/privacy" className="text-zinc-400 hover:text-white underline">Privacy Policy</a>
       </p>
     </div>
   );
