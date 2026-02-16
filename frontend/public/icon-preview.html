@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EdgeLog App Icon Preview</title>
+  <style>
+    body {
+      background: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui;
+      color: white;
+      gap: 30px;
+    }
+    h1 { margin: 0; color: #22C55E; }
+    .preview-container {
+      display: flex;
+      gap: 40px;
+      align-items: center;
+    }
+    .icon-box {
+      text-align: center;
+    }
+    .icon-box img {
+      border-radius: 22%;
+      box-shadow: 0 10px 40px rgba(34, 197, 94, 0.3);
+    }
+    .icon-box p {
+      margin-top: 10px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <h1>EdgeLog App Icon Preview</h1>
+  <div class="preview-container">
+    <div class="icon-box">
+      <img src="/app-icons/icon-180.png" width="180" height="180" alt="Icon 180px">
+      <p>180x180 (iPhone)</p>
+    </div>
+    <div class="icon-box">
+      <img src="/app-icons/icon-512.png" width="256" height="256" alt="Icon 512px">
+      <p>512x512 (Store)</p>
+    </div>
+  </div>
+</body>
+</html>
