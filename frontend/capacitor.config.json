@@ -1,0 +1,8 @@
+{
+  "appId": "com.edgelog.app",
+  "appName": "EdgeLog",
+  "webDir": "build",
+  "server": {
+    "androidScheme": "https"
+  }
+}
