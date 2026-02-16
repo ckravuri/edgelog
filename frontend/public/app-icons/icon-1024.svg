@@ -5,7 +5,7 @@
       <stop offset="100%" style="stop-color:#22C55E"/>
     </linearGradient>
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -17,34 +17,27 @@
   <rect width="1024" height="1024" fill="#050505"/>
   
   <!-- Soft glow behind -->
-  <ellipse cx="512" cy="512" rx="200" ry="180" fill="#22C55E" opacity="0.08"/>
+  <ellipse cx="512" cy="512" rx="180" ry="160" fill="#22C55E" opacity="0.06"/>
   
-  <!-- Zigzag trending arrow: up, down, up with arrow head -->
+  <!-- Zigzag trending arrow with arrow head at end -->
   <g filter="url(#glow)">
-    <!-- Main zigzag line: bottom-left up, then down, then up to arrow -->
-    <path 
-      d="M 300 620 L 420 420 L 540 580 L 700 340" 
+    <!-- Main zigzag line -->
+    <polyline 
+      points="300,620 420,400 540,580 700,320" 
       fill="none" 
       stroke="url(#arrowGradient)" 
-      stroke-width="36" 
+      stroke-width="32" 
       stroke-linecap="round" 
       stroke-linejoin="round"
     />
-    <!-- Arrow head - vertical line going UP -->
-    <path 
-      d="M 700 340 L 700 240" 
+    <!-- Arrow head pointing up-right (L shape at top) -->
+    <polyline 
+      points="600,220 700,220 700,320" 
       fill="none" 
       stroke="url(#arrowGradient)" 
-      stroke-width="36" 
-      stroke-linecap="round"
-    />
-    <!-- Arrow head - horizontal line going LEFT -->
-    <path 
-      d="M 700 240 L 600 240" 
-      fill="none" 
-      stroke="url(#arrowGradient)" 
-      stroke-width="36" 
-      stroke-linecap="round"
+      stroke-width="32" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
     />
   </g>
 </svg>
