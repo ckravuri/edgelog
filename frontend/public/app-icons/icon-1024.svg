@@ -1,15 +1,11 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0A0A0A"/>
-      <stop offset="100%" style="stop-color:#050505"/>
-    </linearGradient>
     <linearGradient id="arrowGradient" x1="0%" y1="100%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:#16A34A"/>
       <stop offset="100%" style="stop-color:#22C55E"/>
     </linearGradient>
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
+      <feGaussianBlur stdDeviation="15" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -17,38 +13,37 @@
     </filter>
   </defs>
   
-  <!-- Background -->
-  <rect width="1024" height="1024" fill="url(#bgGradient)"/>
+  <!-- Background - solid dark -->
+  <rect width="1024" height="1024" fill="#050505"/>
   
-  <!-- Glow effect behind arrow -->
-  <ellipse cx="512" cy="480" rx="300" ry="250" fill="#22C55E" opacity="0.1" filter="url(#glow)"/>
+  <!-- Soft glow behind -->
+  <ellipse cx="512" cy="512" rx="350" ry="300" fill="#22C55E" opacity="0.08"/>
   
-  <!-- TrendingUp Arrow - matching lucide-react icon style -->
-  <!-- The icon: polyline going up then arrow head at top-right corner -->
-  <g filter="url(#glow)">
-    <!-- Main trend line: bottom-left to middle-top to right -->
+  <!-- TrendingUp Icon - matching the app exactly -->
+  <g transform="translate(512, 512)" filter="url(#glow)">
+    <!-- Main polyline: diagonal up from bottom-left, then slight down to right -->
     <polyline 
-      points="200,750 450,350 824,550" 
+      points="-280,200 0,-150 280,50" 
       fill="none" 
       stroke="url(#arrowGradient)" 
-      stroke-width="64" 
+      stroke-width="56" 
       stroke-linecap="round" 
       stroke-linejoin="round"
     />
-    <!-- Arrow head - vertical line pointing UP from top-right -->
+    <!-- Arrow head - line going UP from top-right point -->
     <line 
-      x1="824" y1="550" 
-      x2="824" y2="280" 
+      x1="280" y1="50" 
+      x2="280" y2="-170" 
       stroke="url(#arrowGradient)" 
-      stroke-width="64" 
+      stroke-width="56" 
       stroke-linecap="round"
     />
-    <!-- Arrow head - horizontal line pointing LEFT from top-right -->
+    <!-- Arrow head - line going LEFT from top-right point -->
     <line 
-      x1="824" y1="280" 
-      x2="554" y2="280" 
+      x1="280" y1="-170" 
+      x2="60" y2="-170" 
       stroke="url(#arrowGradient)" 
-      stroke-width="64" 
+      stroke-width="56" 
       stroke-linecap="round"
     />
   </g>
