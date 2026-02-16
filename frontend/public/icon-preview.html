@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>EdgeLog App Icon - Download</title>
+  <title>Download EdgeLog App Icon</title>
   <style>
     body {
       background: #1a1a1a;
@@ -12,41 +12,73 @@
       justify-content: center;
       font-family: system-ui;
       color: white;
-      gap: 20px;
+      gap: 25px;
     }
-    h1 { margin: 0; color: #22C55E; font-size: 24px; }
-    .icon-box {
-      text-align: center;
-    }
+    h1 { margin: 0; color: #22C55E; font-size: 22px; }
     .icon-box img {
       border-radius: 22%;
       box-shadow: 0 10px 40px rgba(34, 197, 94, 0.3);
     }
-    .icon-box p {
-      margin-top: 15px;
-      color: #888;
-      font-size: 14px;
-    }
-    a.download-btn {
-      margin-top: 20px;
+    p { color: #888; font-size: 14px; margin: 0; }
+    .download-btn {
       background: #22C55E;
       color: #000;
-      padding: 12px 30px;
+      padding: 14px 35px;
       border-radius: 8px;
       text-decoration: none;
       font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
     }
-    a.download-btn:hover {
-      background: #16A34A;
+    .download-btn:hover { background: #16A34A; }
+    .instructions {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 400px;
+      text-align: left;
+      margin-top: 10px;
     }
+    .instructions h3 { color: #22C55E; margin: 0 0 10px 0; font-size: 14px; }
+    .instructions ol { margin: 0; padding-left: 20px; color: #aaa; font-size: 13px; line-height: 1.8; }
   </style>
 </head>
 <body>
   <h1>EdgeLog App Icon (1024x1024)</h1>
   <div class="icon-box">
-    <img src="/app-icons/icon-1024.png" width="300" height="300" alt="App Icon 1024x1024">
-    <p>1024 × 1024 px — Required for App Store</p>
+    <img src="/app-icons/icon-1024.png" width="256" height="256" alt="App Icon">
   </div>
-  <a class="download-btn" href="/app-icons/icon-1024.png" download="EdgeLog-AppIcon-1024.png">Download Icon</a>
+  <p>1024 × 1024 px — Required for App Store</p>
+  
+  <button class="download-btn" onclick="downloadIcon()">Download PNG Icon</button>
+  
+  <div class="instructions">
+    <h3>Alternative: Right-click method</h3>
+    <ol>
+      <li>Right-click on the icon image above</li>
+      <li>Select "Save Image As..."</li>
+      <li>Save as "AppIcon.png"</li>
+    </ol>
+  </div>
+
+  <script>
+    async function downloadIcon() {
+      try {
+        const response = await fetch('/app-icons/icon-1024.png');
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'EdgeLog-AppIcon-1024x1024.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Download failed. Please right-click the image and select "Save Image As..."');
+      }
+    }
+  </script>
 </body>
 </html>
