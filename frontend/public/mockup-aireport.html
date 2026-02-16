@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EdgeLog - AI Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0a0a0a; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body class="text-white min-h-screen p-4">
+  <!-- Status Bar -->
+  <div class="flex justify-between items-center text-xs mb-4 px-2">
+    <span>9:41</span>
+    <div class="flex items-center gap-1">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg class="w-6 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="flex items-center mb-6">
+    <svg class="w-6 h-6 mr-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    <h1 class="text-xl font-bold">AI Performance Report</h1>
+  </div>
+
+  <!-- AI Badge -->
+  <div class="bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl p-4 mb-6 border border-green-500/30">
+    <div class="flex items-center mb-2">
+      <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+        <svg class="w-5 h-5 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+      </div>
+      <div>
+        <p class="font-bold text-green-500">Powered by GPT-5.2</p>
+        <p class="text-xs text-gray-400">Generated on Feb 16, 2026</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Performance Score -->
+  <div class="bg-gray-900 rounded-xl p-6 mb-4 text-center">
+    <p class="text-gray-400 text-sm mb-2">Overall Performance Score</p>
+    <p class="text-5xl font-bold text-green-500 mb-2">87</p>
+    <p class="text-green-500 text-sm">Excellent Trader</p>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="grid grid-cols-2 gap-3 mb-4">
+    <div class="bg-gray-900 rounded-xl p-4">
+      <p class="text-gray-400 text-xs mb-1">Win Rate</p>
+      <p class="text-xl font-bold text-green-500">73%</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl p-4">
+      <p class="text-gray-400 text-xs mb-1">Profit Factor</p>
+      <p class="text-xl font-bold text-white">2.4</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl p-4">
+      <p class="text-gray-400 text-xs mb-1">Avg Winner</p>
+      <p class="text-xl font-bold text-green-500">+$142</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl p-4">
+      <p class="text-gray-400 text-xs mb-1">Avg Loser</p>
+      <p class="text-xl font-bold text-red-500">-$58</p>
+    </div>
+  </div>
+
+  <!-- AI Insights -->
+  <div class="bg-gray-900 rounded-xl p-4 mb-4">
+    <p class="text-gray-400 text-sm mb-3">AI Insights</p>
+    <div class="space-y-3">
+      <div class="flex items-start">
+        <div class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3"></div>
+        <p class="text-sm">Strong risk management with consistent 1:2 R:R ratio</p>
+      </div>
+      <div class="flex items-start">
+        <div class="w-2 h-2 bg-green-500 rounded-full mt-2 mr-3"></div>
+        <p class="text-sm">Best performance on EUR/USD pairs (82% win rate)</p>
+      </div>
+      <div class="flex items-start">
+        <div class="w-2 h-2 bg-yellow-500 rounded-full mt-2 mr-3"></div>
+        <p class="text-sm">Consider reducing position size on GBP pairs</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Buttons -->
+  <div class="space-y-3">
+    <button class="w-full bg-blue-500 text-white font-bold py-3 rounded-xl flex items-center justify-center">
+      <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
+      Share on Twitter
+    </button>
+    <button class="w-full bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center">
+      <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Share on WhatsApp
+    </button>
+    <button class="w-full bg-gray-800 text-white font-bold py-3 rounded-xl flex items-center justify-center">
+      <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+      Download Report
+    </button>
+  </div>
+</body>
+</html>
