@@ -5,7 +5,7 @@
       <stop offset="100%" style="stop-color:#22C55E"/>
     </linearGradient>
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="15" result="coloredBlur"/>
+      <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -17,34 +17,18 @@
   <rect width="1024" height="1024" fill="#050505"/>
   
   <!-- Soft glow behind -->
-  <ellipse cx="512" cy="512" rx="350" ry="300" fill="#22C55E" opacity="0.08"/>
+  <ellipse cx="512" cy="512" rx="320" ry="280" fill="#22C55E" opacity="0.1"/>
   
-  <!-- TrendingUp Icon - matching the app exactly -->
-  <g transform="translate(512, 512)" filter="url(#glow)">
-    <!-- Main polyline: diagonal up from bottom-left, then slight down to right -->
-    <polyline 
-      points="-280,200 0,-150 280,50" 
+  <!-- TrendingUp Icon using single path -->
+  <g filter="url(#glow)">
+    <!-- Combined path for the trend line and arrow -->
+    <path 
+      d="M 200 720 L 480 340 L 780 540 M 780 540 L 780 300 M 780 300 L 540 300" 
       fill="none" 
       stroke="url(#arrowGradient)" 
-      stroke-width="56" 
+      stroke-width="52" 
       stroke-linecap="round" 
       stroke-linejoin="round"
-    />
-    <!-- Arrow head - line going UP from top-right point -->
-    <line 
-      x1="280" y1="50" 
-      x2="280" y2="-170" 
-      stroke="url(#arrowGradient)" 
-      stroke-width="56" 
-      stroke-linecap="round"
-    />
-    <!-- Arrow head - line going LEFT from top-right point -->
-    <line 
-      x1="280" y1="-170" 
-      x2="60" y2="-170" 
-      stroke="url(#arrowGradient)" 
-      stroke-width="56" 
-      stroke-linecap="round"
     />
   </g>
 </svg>
