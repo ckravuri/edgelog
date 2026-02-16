@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EdgeLog - Dashboard Preview</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0a0a0a; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body class="text-white min-h-screen p-4">
+  <!-- Status Bar -->
+  <div class="flex justify-between items-center text-xs mb-6 px-2">
+    <span>9:41</span>
+    <div class="flex items-center gap-1">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.1.9 2 2 2h4v-8H5v-1c0-3.87 3.13-7 7-7s7 3.13 7 7v1h-4v8h4c1.1 0 2-.9 2-2v-7c0-4.97-4.03-9-9-9z"/></svg>
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <svg class="w-6 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <p class="text-gray-400 text-sm">Good morning,</p>
+      <h1 class="text-xl font-bold">Trader</h1>
+    </div>
+    <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center font-bold">T</div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 gap-3 mb-6">
+    <div class="bg-gray-900 rounded-xl p-4">
+      <p class="text-gray-400 text-xs mb-1">Today's Trades</p>
+      <p class="text-2xl font-bold text-green-500">5</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl p-4">
+      <p class="text-gray-400 text-xs mb-1">Win Rate</p>
+      <p class="text-2xl font-bold text-green-500">73%</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl p-4">
+      <p class="text-gray-400 text-xs mb-1">Avg R:R</p>
+      <p class="text-2xl font-bold text-white">1:2.4</p>
+    </div>
+    <div class="bg-gray-900 rounded-xl p-4">
+      <p class="text-gray-400 text-xs mb-1">Discipline</p>
+      <p class="text-2xl font-bold text-green-500">92%</p>
+    </div>
+  </div>
+
+  <!-- Equity Curve -->
+  <div class="bg-gray-900 rounded-xl p-4 mb-6">
+    <p class="text-gray-400 text-sm mb-3">Equity Curve</p>
+    <svg viewBox="0 0 300 100" class="w-full h-24">
+      <defs>
+        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#22C55E;stop-opacity:0.3"/>
+          <stop offset="100%" style="stop-color:#22C55E;stop-opacity:0"/>
+        </linearGradient>
+      </defs>
+      <path d="M0,80 L50,70 L100,75 L150,50 L200,55 L250,30 L300,20 L300,100 L0,100 Z" fill="url(#gradient)"/>
+      <path d="M0,80 L50,70 L100,75 L150,50 L200,55 L250,30 L300,20" stroke="#22C55E" stroke-width="2" fill="none"/>
+    </svg>
+  </div>
+
+  <!-- Recent Trades -->
+  <div class="mb-20">
+    <p class="text-gray-400 text-sm mb-3">Recent Trades</p>
+    <div class="space-y-2">
+      <div class="bg-gray-900 rounded-xl p-3 flex justify-between items-center">
+        <div>
+          <p class="font-semibold">EUR/USD</p>
+          <p class="text-xs text-gray-400">Buy • 0.5 lots</p>
+        </div>
+        <div class="text-right">
+          <p class="text-green-500 font-bold">+$124.50</p>
+          <p class="text-xs text-gray-400">Win</p>
+        </div>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-3 flex justify-between items-center">
+        <div>
+          <p class="font-semibold">GBP/JPY</p>
+          <p class="text-xs text-gray-400">Sell • 0.3 lots</p>
+        </div>
+        <div class="text-right">
+          <p class="text-red-500 font-bold">-$45.00</p>
+          <p class="text-xs text-gray-400">Loss</p>
+        </div>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-3 flex justify-between items-center">
+        <div>
+          <p class="font-semibold">XAU/USD</p>
+          <p class="text-xs text-gray-400">Buy • 0.1 lots</p>
+        </div>
+        <div class="text-right">
+          <p class="text-green-500 font-bold">+$230.00</p>
+          <p class="text-xs text-gray-400">Win</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 px-6 py-3">
+    <div class="flex justify-around items-center">
+      <div class="text-center text-green-500">
+        <svg class="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        <p class="text-xs mt-1">Home</p>
+      </div>
+      <div class="text-center text-gray-500">
+        <svg class="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+        <p class="text-xs mt-1">Stats</p>
+      </div>
+      <div class="text-center">
+        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center -mt-6">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        </div>
+      </div>
+      <div class="text-center text-gray-500">
+        <svg class="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+        <p class="text-xs mt-1">History</p>
+      </div>
+      <div class="text-center text-gray-500">
+        <svg class="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <p class="text-xs mt-1">Profile</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
