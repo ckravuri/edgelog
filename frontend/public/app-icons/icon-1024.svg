@@ -9,7 +9,7 @@
       <stop offset="100%" style="stop-color:#22C55E"/>
     </linearGradient>
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
+      <feGaussianBlur stdDeviation="25" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -20,65 +20,28 @@
   <!-- Background -->
   <rect width="1024" height="1024" fill="url(#bgGradient)"/>
   
-  <!-- Subtle grid pattern -->
-  <g opacity="0.03">
-    <line x1="256" y1="0" x2="256" y2="1024" stroke="#FFFFFF" stroke-width="1"/>
-    <line x1="512" y1="0" x2="512" y2="1024" stroke="#FFFFFF" stroke-width="1"/>
-    <line x1="768" y1="0" x2="768" y2="1024" stroke="#FFFFFF" stroke-width="1"/>
-    <line x1="0" y1="256" x2="1024" y2="256" stroke="#FFFFFF" stroke-width="1"/>
-    <line x1="0" y1="512" x2="1024" y2="512" stroke="#FFFFFF" stroke-width="1"/>
-    <line x1="0" y1="768" x2="1024" y2="768" stroke="#FFFFFF" stroke-width="1"/>
-  </g>
-  
   <!-- Glow effect behind arrow -->
-  <ellipse cx="512" cy="420" rx="200" ry="150" fill="#22C55E" opacity="0.15" filter="url(#glow)"/>
+  <ellipse cx="512" cy="400" rx="250" ry="200" fill="#22C55E" opacity="0.12" filter="url(#glow)"/>
   
-  <!-- Trending Up Arrow -->
-  <g transform="translate(512, 380)" filter="url(#glow)">
+  <!-- Upward Trending Arrow (like TrendingUp icon) -->
+  <g filter="url(#glow)">
+    <!-- Main diagonal line going up-right -->
     <path 
-      d="M-180 100 L0 -100 L180 100" 
+      d="M250 650 L512 350 L774 550" 
       fill="none" 
       stroke="url(#arrowGradient)" 
-      stroke-width="56" 
+      stroke-width="72" 
       stroke-linecap="round" 
       stroke-linejoin="round"
     />
-    <!-- Arrow head -->
+    <!-- Arrow head pointing up-right -->
     <path 
-      d="M180 100 L180 -20 M180 100 L60 100" 
+      d="M774 550 L774 380 M774 550 L604 550" 
       fill="none" 
       stroke="url(#arrowGradient)" 
-      stroke-width="56" 
+      stroke-width="72" 
       stroke-linecap="round" 
       stroke-linejoin="round"
     />
   </g>
-  
-  <!-- EDGELOG Text -->
-  <text 
-    x="512" 
-    y="680" 
-    text-anchor="middle" 
-    font-family="Arial Black, Helvetica, sans-serif" 
-    font-size="120" 
-    font-weight="900" 
-    letter-spacing="24"
-    fill="#FFFFFF"
-  >
-    EDGELOG
-  </text>
-  
-  <!-- Tagline -->
-  <text 
-    x="512" 
-    y="760" 
-    text-anchor="middle" 
-    font-family="Arial, Helvetica, sans-serif" 
-    font-size="42" 
-    font-weight="400" 
-    letter-spacing="8"
-    fill="#71717A"
-  >
-    TRADING JOURNAL
-  </text>
 </svg>
