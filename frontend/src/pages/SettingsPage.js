@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { User, Bell, Shield, LogOut, ChevronRight, Clock, Trash2 } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { User, Bell, Shield, LogOut, ChevronRight, Clock, Trash2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 
