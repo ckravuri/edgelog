@@ -11,10 +11,16 @@
       padding: 40px;
     }
     h1 { color: #22C55E; margin-bottom: 10px; }
+    h2 { color: #22C55E; margin: 40px 0 20px 0; font-size: 20px; }
     p.subtitle { color: #888; margin-bottom: 30px; }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .grid-ipad {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 20px;
     }
     .card {
@@ -27,6 +33,9 @@
       height: 300px;
       object-fit: cover;
       object-position: top;
+    }
+    .card-ipad img {
+      height: 200px;
     }
     .card-info {
       padding: 15px;
@@ -56,29 +65,31 @@
       border-radius: 12px;
       margin-bottom: 30px;
     }
-    .instructions h2 { color: #22C55E; font-size: 16px; margin: 0 0 10px 0; }
+    .instructions h3 { color: #22C55E; font-size: 16px; margin: 0 0 10px 0; }
     .instructions ol { margin: 0; padding-left: 20px; color: #aaa; line-height: 1.8; }
+    hr { border: none; border-top: 1px solid #333; margin: 40px 0; }
   </style>
 </head>
 <body>
   <h1>EdgeLog App Store Screenshots</h1>
-  <p class="subtitle">iPhone 6.5" & 6.7" Display Screenshots (1284 × 2778px)</p>
+  <p class="subtitle">All screenshots ready for App Store Connect</p>
 
   <div class="instructions">
-    <h2>How to Download:</h2>
+    <h3>How to Download:</h3>
     <ol>
-      <li>Right-click on each screenshot below</li>
+      <li>Right-click on each screenshot</li>
       <li>Select "Save Image As..."</li>
       <li>Upload to App Store Connect</li>
     </ol>
   </div>
 
+  <h2>iPhone 6.5" and 6.7" Display (1284 x 2778px)</h2>
   <div class="grid">
     <div class="card">
       <img src="/screenshots/01-login.png" alt="Login Screen">
       <div class="card-info">
         <h3>1. Login Screen</h3>
-        <p>1284 × 2778px</p>
+        <p>1284 x 2778px</p>
         <a href="/screenshots/01-login.png" download>Download</a>
       </div>
     </div>
@@ -86,7 +97,7 @@
       <img src="/screenshots/02-dashboard.png" alt="Dashboard">
       <div class="card-info">
         <h3>2. Dashboard</h3>
-        <p>1284 × 2778px</p>
+        <p>1284 x 2778px</p>
         <a href="/screenshots/02-dashboard.png" download>Download</a>
       </div>
     </div>
@@ -94,7 +105,7 @@
       <img src="/screenshots/03-addtrade.png" alt="Add Trade">
       <div class="card-info">
         <h3>3. Add Trade</h3>
-        <p>1284 × 2778px</p>
+        <p>1284 x 2778px</p>
         <a href="/screenshots/03-addtrade.png" download>Download</a>
       </div>
     </div>
@@ -102,7 +113,7 @@
       <img src="/screenshots/04-history.png" alt="Trade History">
       <div class="card-info">
         <h3>4. Trade History</h3>
-        <p>1284 × 2778px</p>
+        <p>1284 x 2778px</p>
         <a href="/screenshots/04-history.png" download>Download</a>
       </div>
     </div>
@@ -110,8 +121,54 @@
       <img src="/screenshots/05-aireport.png" alt="AI Report">
       <div class="card-info">
         <h3>5. AI Report</h3>
-        <p>1284 × 2778px</p>
+        <p>1284 x 2778px</p>
         <a href="/screenshots/05-aireport.png" download>Download</a>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <h2>iPad Pro 12.9" and 13" Display (2048 x 2732px)</h2>
+  <div class="grid-ipad">
+    <div class="card card-ipad">
+      <img src="/screenshots/ipad-01-login.png" alt="iPad Login">
+      <div class="card-info">
+        <h3>1. Login Screen</h3>
+        <p>2048 x 2732px</p>
+        <a href="/screenshots/ipad-01-login.png" download>Download</a>
+      </div>
+    </div>
+    <div class="card card-ipad">
+      <img src="/screenshots/ipad-02-dashboard.png" alt="iPad Dashboard">
+      <div class="card-info">
+        <h3>2. Dashboard</h3>
+        <p>2048 x 2732px</p>
+        <a href="/screenshots/ipad-02-dashboard.png" download>Download</a>
+      </div>
+    </div>
+    <div class="card card-ipad">
+      <img src="/screenshots/ipad-03-addtrade.png" alt="iPad Add Trade">
+      <div class="card-info">
+        <h3>3. Add Trade</h3>
+        <p>2048 x 2732px</p>
+        <a href="/screenshots/ipad-03-addtrade.png" download>Download</a>
+      </div>
+    </div>
+    <div class="card card-ipad">
+      <img src="/screenshots/ipad-04-history.png" alt="iPad History">
+      <div class="card-info">
+        <h3>4. Trade History</h3>
+        <p>2048 x 2732px</p>
+        <a href="/screenshots/ipad-04-history.png" download>Download</a>
+      </div>
+    </div>
+    <div class="card card-ipad">
+      <img src="/screenshots/ipad-05-aireport.png" alt="iPad AI Report">
+      <div class="card-info">
+        <h3>5. AI Report</h3>
+        <p>2048 x 2732px</p>
+        <a href="/screenshots/ipad-05-aireport.png" download>Download</a>
       </div>
     </div>
   </div>
