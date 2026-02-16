@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EdgeLog - iPad Add Trade</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0a0a0a; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body class="text-white min-h-screen p-8">
+  <!-- Status Bar -->
+  <div class="flex justify-between items-center text-sm mb-6 px-4">
+    <span>9:41</span>
+    <div class="flex items-center gap-2">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <span>100%</span>
+      <svg class="w-8 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="flex items-center mb-8 px-4">
+    <svg class="w-8 h-8 mr-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    <h1 class="text-3xl font-bold">Add New Trade</h1>
+  </div>
+
+  <!-- Form Grid -->
+  <div class="grid grid-cols-2 gap-8 px-4 max-w-5xl mx-auto">
+    <!-- Left Column -->
+    <div class="space-y-6">
+      <div>
+        <label class="text-gray-400 text-sm mb-3 block">Trading Pair</label>
+        <div class="bg-gray-900 rounded-2xl p-5 flex justify-between items-center">
+          <span class="font-semibold text-xl">EUR/USD</span>
+          <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-gray-400 text-sm mb-3 block">Trade Type</label>
+        <div class="grid grid-cols-2 gap-4">
+          <button class="bg-green-500 text-black font-bold py-5 rounded-2xl text-xl">BUY</button>
+          <button class="bg-gray-800 text-gray-400 font-bold py-5 rounded-2xl border border-gray-700 text-xl">SELL</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-gray-400 text-sm mb-3 block">Entry Price</label>
+        <div class="bg-gray-900 rounded-2xl p-5">
+          <span class="font-semibold text-xl">1.0892</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="text-gray-400 text-sm mb-3 block">Stop Loss</label>
+          <div class="bg-gray-900 rounded-2xl p-5">
+            <span class="font-semibold text-xl text-red-500">1.0850</span>
+          </div>
+        </div>
+        <div>
+          <label class="text-gray-400 text-sm mb-3 block">Take Profit</label>
+          <div class="bg-gray-900 rounded-2xl p-5">
+            <span class="font-semibold text-xl text-green-500">1.0950</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-gray-400 text-sm mb-3 block">Lot Size</label>
+        <div class="bg-gray-900 rounded-2xl p-5">
+          <span class="font-semibold text-xl">0.50</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="space-y-6">
+      <div>
+        <label class="text-gray-400 text-sm mb-3 block">Chart Screenshot</label>
+        <div class="bg-gray-900 rounded-2xl p-12 border-2 border-dashed border-gray-700 text-center">
+          <svg class="w-16 h-16 mx-auto text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <p class="text-gray-400 text-lg">Tap to add chart screenshot</p>
+          <p class="text-gray-600 text-sm mt-2">PNG, JPG up to 10MB</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-gray-400 text-sm mb-3 block">Trade Notes</label>
+        <div class="bg-gray-900 rounded-2xl p-5 h-40">
+          <span class="text-gray-500">Break of structure on H4 timeframe. Price rejected from key resistance level with strong bearish engulfing candle...</span>
+        </div>
+      </div>
+
+      <button class="w-full bg-green-500 text-black font-bold py-5 rounded-2xl text-xl mt-4">
+        Save Trade
+      </button>
+    </div>
+  </div>
+</body>
+</html>

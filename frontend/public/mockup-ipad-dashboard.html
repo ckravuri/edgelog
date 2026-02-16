@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EdgeLog - iPad Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0a0a0a; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body class="text-white min-h-screen p-8">
+  <!-- Status Bar -->
+  <div class="flex justify-between items-center text-sm mb-8 px-4">
+    <span>9:41</span>
+    <div class="flex items-center gap-2">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      <span>100%</span>
+      <svg class="w-8 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-8 px-4">
+    <div>
+      <p class="text-gray-400 text-lg">Good morning,</p>
+      <h1 class="text-3xl font-bold">Trader</h1>
+    </div>
+    <div class="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center font-bold text-xl">T</div>
+  </div>
+
+  <!-- Main Grid Layout -->
+  <div class="grid grid-cols-3 gap-6 px-4">
+    <!-- Left Column - Stats -->
+    <div class="space-y-6">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-gray-900 rounded-2xl p-6">
+          <p class="text-gray-400 text-sm mb-2">Today's Trades</p>
+          <p class="text-4xl font-bold text-green-500">5</p>
+        </div>
+        <div class="bg-gray-900 rounded-2xl p-6">
+          <p class="text-gray-400 text-sm mb-2">Win Rate</p>
+          <p class="text-4xl font-bold text-green-500">73%</p>
+        </div>
+        <div class="bg-gray-900 rounded-2xl p-6">
+          <p class="text-gray-400 text-sm mb-2">Avg R:R</p>
+          <p class="text-4xl font-bold text-white">1:2.4</p>
+        </div>
+        <div class="bg-gray-900 rounded-2xl p-6">
+          <p class="text-gray-400 text-sm mb-2">Discipline</p>
+          <p class="text-4xl font-bold text-green-500">92%</p>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-gray-900 rounded-2xl p-6">
+        <p class="text-gray-400 text-sm mb-4">Quick Actions</p>
+        <div class="space-y-3">
+          <button class="w-full bg-green-500 text-black font-bold py-4 rounded-xl flex items-center justify-center text-lg">
+            <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Add New Trade
+          </button>
+          <button class="w-full bg-gray-800 text-white font-bold py-4 rounded-xl flex items-center justify-center text-lg">
+            <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            AI Report
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle Column - Equity Curve -->
+    <div class="bg-gray-900 rounded-2xl p-6">
+      <p class="text-gray-400 text-sm mb-4">Equity Curve</p>
+      <svg viewBox="0 0 400 300" class="w-full h-64 mb-4">
+        <defs>
+          <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:#22C55E;stop-opacity:0.3"/>
+            <stop offset="100%" style="stop-color:#22C55E;stop-opacity:0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,250 L50,230 L100,240 L150,180 L200,200 L250,120 L300,140 L350,80 L400,50 L400,300 L0,300 Z" fill="url(#gradient)"/>
+        <path d="M0,250 L50,230 L100,240 L150,180 L200,200 L250,120 L300,140 L350,80 L400,50" stroke="#22C55E" stroke-width="3" fill="none"/>
+      </svg>
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div>
+          <p class="text-gray-400 text-xs">Total P&L</p>
+          <p class="text-green-500 font-bold text-xl">+$2,847</p>
+        </div>
+        <div>
+          <p class="text-gray-400 text-xs">Best Day</p>
+          <p class="text-green-500 font-bold text-xl">+$456</p>
+        </div>
+        <div>
+          <p class="text-gray-400 text-xs">Worst Day</p>
+          <p class="text-red-500 font-bold text-xl">-$124</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column - Recent Trades -->
+    <div class="bg-gray-900 rounded-2xl p-6">
+      <div class="flex justify-between items-center mb-4">
+        <p class="text-gray-400 text-sm">Recent Trades</p>
+        <a href="#" class="text-green-500 text-sm">View All</a>
+      </div>
+      <div class="space-y-3">
+        <div class="bg-gray-800 rounded-xl p-4 flex justify-between items-center">
+          <div>
+            <p class="font-semibold text-lg">EUR/USD</p>
+            <p class="text-sm text-gray-400">Buy - 0.5 lots</p>
+          </div>
+          <div class="text-right">
+            <p class="text-green-500 font-bold text-lg">+$124.50</p>
+            <span class="bg-green-500/20 text-green-500 text-xs px-2 py-1 rounded">WIN</span>
+          </div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 flex justify-between items-center">
+          <div>
+            <p class="font-semibold text-lg">GBP/JPY</p>
+            <p class="text-sm text-gray-400">Sell - 0.3 lots</p>
+          </div>
+          <div class="text-right">
+            <p class="text-red-500 font-bold text-lg">-$45.00</p>
+            <span class="bg-red-500/20 text-red-500 text-xs px-2 py-1 rounded">LOSS</span>
+          </div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 flex justify-between items-center">
+          <div>
+            <p class="font-semibold text-lg">XAU/USD</p>
+            <p class="text-sm text-gray-400">Buy - 0.1 lots</p>
+          </div>
+          <div class="text-right">
+            <p class="text-green-500 font-bold text-lg">+$230.00</p>
+            <span class="bg-green-500/20 text-green-500 text-xs px-2 py-1 rounded">WIN</span>
+          </div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 flex justify-between items-center">
+          <div>
+            <p class="font-semibold text-lg">USD/CAD</p>
+            <p class="text-sm text-gray-400">Sell - 0.2 lots</p>
+          </div>
+          <div class="text-right">
+            <p class="text-green-500 font-bold text-lg">+$87.25</p>
+            <span class="bg-green-500/20 text-green-500 text-xs px-2 py-1 rounded">WIN</span>
+          </div>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-4 flex justify-between items-center">
+          <div>
+            <p class="font-semibold text-lg">BTC/USD</p>
+            <p class="text-sm text-gray-400">Buy - 0.05 lots</p>
+          </div>
+          <div class="text-right">
+            <p class="text-green-500 font-bold text-lg">+$456.00</p>
+            <span class="bg-green-500/20 text-green-500 text-xs px-2 py-1 rounded">WIN</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
