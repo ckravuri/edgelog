@@ -5,7 +5,7 @@
       <stop offset="100%" style="stop-color:#22C55E"/>
     </linearGradient>
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+      <feGaussianBlur stdDeviation="15" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -14,31 +14,35 @@
   </defs>
   
   <!-- Background - solid dark -->
-  <rect width="1024" height="1024" fill="#050505"/>
+  <rect width="1024" height="1024" fill="#0a0a0a"/>
   
-  <!-- Soft glow behind -->
-  <ellipse cx="520" cy="480" rx="220" ry="200" fill="#22C55E" opacity="0.06"/>
+  <!-- Soft green glow behind the icon -->
+  <ellipse cx="512" cy="512" rx="280" ry="250" fill="#22C55E" opacity="0.08"/>
   
-  <!-- Zigzag trending line ending with arrow pointing UP-RIGHT -->
   <g filter="url(#glow)">
-    <!-- Main zigzag path: bottom-left, up, down to valley, then up toward arrow tip -->
+    <!-- Zigzag line: starts bottom-left, goes up, down (V shape), then up to arrow -->
     <polyline 
-      points="220,680 380,420 520,600 720,260" 
+      points="240,680 400,400 540,580 680,320" 
       fill="none" 
       stroke="url(#arrowGradient)" 
-      stroke-width="40" 
+      stroke-width="36" 
       stroke-linecap="round" 
       stroke-linejoin="round"
     />
-    <!-- Arrow head - pointing UP-RIGHT (↗) from the tip -->
-    <!-- This creates a "<" shape rotated to point up-right -->
-    <polyline 
-      points="620,260 720,260 720,360" 
-      fill="none" 
+    
+    <!-- Arrow line continuing up-right -->
+    <line 
+      x1="680" y1="320" 
+      x2="780" y2="220" 
       stroke="url(#arrowGradient)" 
-      stroke-width="40" 
-      stroke-linecap="round" 
-      stroke-linejoin="round"
+      stroke-width="36" 
+      stroke-linecap="round"
+    />
+    
+    <!-- Arrowhead - solid triangle pointing up-right (45 degrees) -->
+    <polygon 
+      points="780,220 710,230 720,300" 
+      fill="#22C55E"
     />
   </g>
 </svg>
