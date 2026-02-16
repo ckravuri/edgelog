@@ -149,7 +149,7 @@ Click **"Get Started"** and answer:
 
 **Privacy Policy URL**: 
 ```
-https://create-anything-39.preview.emergentagent.com/privacy
+https://edgelog-deploy.preview.emergentagent.com/privacy
 ```
 (Replace with your production URL after deployment)
 
