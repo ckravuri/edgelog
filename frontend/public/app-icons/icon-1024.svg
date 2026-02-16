@@ -5,7 +5,7 @@
       <stop offset="100%" style="stop-color:#22C55E"/>
     </linearGradient>
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="15" result="coloredBlur"/>
+      <feGaussianBlur stdDeviation="12" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -20,29 +20,33 @@
   <ellipse cx="512" cy="512" rx="280" ry="250" fill="#22C55E" opacity="0.08"/>
   
   <g filter="url(#glow)">
-    <!-- Zigzag line: starts bottom-left, goes up, down (V shape), then up to arrow -->
+    <!-- Zigzag line: V shape then up to arrow -->
     <polyline 
-      points="240,680 400,400 540,580 680,320" 
+      points="250,620 400,380 530,560 700,280" 
       fill="none" 
-      stroke="url(#arrowGradient)" 
-      stroke-width="36" 
+      stroke="#22C55E" 
+      stroke-width="38" 
       stroke-linecap="round" 
       stroke-linejoin="round"
     />
     
-    <!-- Arrow line continuing up-right -->
+    <!-- Arrow stem going up-right at 45 degrees -->
     <line 
-      x1="680" y1="320" 
-      x2="780" y2="220" 
-      stroke="url(#arrowGradient)" 
-      stroke-width="36" 
+      x1="700" y1="280" 
+      x2="760" y2="220" 
+      stroke="#22C55E" 
+      stroke-width="38" 
       stroke-linecap="round"
     />
     
-    <!-- Arrowhead - solid triangle pointing up-right (45 degrees) -->
-    <polygon 
-      points="780,220 710,230 720,300" 
-      fill="#22C55E"
+    <!-- Arrowhead - two lines forming > shape pointing up-right -->
+    <polyline 
+      points="680,220 760,220 760,300" 
+      fill="none" 
+      stroke="#22C55E" 
+      stroke-width="38" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
     />
   </g>
 </svg>
