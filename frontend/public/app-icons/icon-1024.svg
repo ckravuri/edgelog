@@ -9,7 +9,7 @@
       <stop offset="100%" style="stop-color:#22C55E"/>
     </linearGradient>
     <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="25" result="coloredBlur"/>
+      <feGaussianBlur stdDeviation="20" result="coloredBlur"/>
       <feMerge>
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -21,30 +21,34 @@
   <rect width="1024" height="1024" fill="url(#bgGradient)"/>
   
   <!-- Glow effect behind arrow -->
-  <ellipse cx="512" cy="450" rx="280" ry="220" fill="#22C55E" opacity="0.12" filter="url(#glow)"/>
+  <ellipse cx="512" cy="480" rx="300" ry="250" fill="#22C55E" opacity="0.1" filter="url(#glow)"/>
   
-  <!-- Upward Trending Arrow (like TrendingUp icon) - Arrow pointing UP and to the RIGHT -->
+  <!-- TrendingUp Arrow - matching lucide-react icon style -->
+  <!-- The icon: polyline going up then arrow head at top-right corner -->
   <g filter="url(#glow)">
-    <!-- Main polyline: starts bottom-left, goes up to peak, then slightly down-right -->
+    <!-- Main trend line: bottom-left to middle-top to right -->
     <polyline 
-      points="220,680 512,320 804,520" 
+      points="200,750 450,350 824,550" 
       fill="none" 
       stroke="url(#arrowGradient)" 
-      stroke-width="72" 
+      stroke-width="64" 
       stroke-linecap="round" 
       stroke-linejoin="round"
     />
-    <!-- Arrow head at top-right pointing UP-RIGHT -->
-    <!-- Vertical line going UP from the endpoint -->
-    <line x1="804" y1="520" x2="804" y2="320" 
+    <!-- Arrow head - vertical line pointing UP from top-right -->
+    <line 
+      x1="824" y1="550" 
+      x2="824" y2="280" 
       stroke="url(#arrowGradient)" 
-      stroke-width="72" 
+      stroke-width="64" 
       stroke-linecap="round"
     />
-    <!-- Horizontal line going LEFT from the endpoint -->
-    <line x1="804" y1="320" x2="604" y2="320" 
+    <!-- Arrow head - horizontal line pointing LEFT from top-right -->
+    <line 
+      x1="824" y1="280" 
+      x2="554" y2="280" 
       stroke="url(#arrowGradient)" 
-      stroke-width="72" 
+      stroke-width="64" 
       stroke-linecap="round"
     />
   </g>
