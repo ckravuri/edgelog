@@ -236,9 +236,27 @@ export default function SettingsPage({ user }) {
           </button>
         </div>
 
+        {/* Legal */}
+        <div className="animate-fadeIn" style={{ animationDelay: '0.25s' }}>
+          <p className="stat-label mb-3">Legal</p>
+          <Link
+            to="/privacy"
+            className="w-full stat-card flex items-center justify-between hover:bg-white/5 transition-colors"
+            data-testid="privacy-policy-link"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-zinc-500/20 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-zinc-400" />
+              </div>
+              <span className="font-semibold">Privacy Policy</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-zinc-500" />
+          </Link>
+        </div>
+
         {/* Version */}
         <p className="text-center text-xs text-zinc-600 pt-4">
-          EdgeLog v1.0.0 • Made for traders
+          EdgeLog v1.2.0 • Made for traders
         </p>
       </div>
 
