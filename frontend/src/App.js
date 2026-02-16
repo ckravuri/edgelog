@@ -12,6 +12,7 @@ import DashboardPage from "@/pages/DashboardPage";
 import SettingsPage from "@/pages/SettingsPage";
 import ReportsPage from "@/pages/ReportsPage";
 import HistoryPage from "@/pages/HistoryPage";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function AppRouter() {
