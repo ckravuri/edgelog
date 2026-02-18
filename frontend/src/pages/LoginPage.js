@@ -140,12 +140,20 @@ export default function LoginPage() {
       <p className="auth-tagline animate-fadeIn" style={{ animationDelay: '0.2s' }}>
         Your Trading Edge, Journaled
       </p>
+
+      {/* Error message */}
+      {error && (
+        <div className="w-full max-w-xs mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm text-center animate-fadeIn">
+          {error}
+        </div>
+      )}
       
       {/* Login buttons */}
       <div className="w-full max-w-xs space-y-4 animate-fadeIn" style={{ animationDelay: '0.3s' }}>
         <button 
           className="auth-btn" 
           onClick={handleGoogleLogin}
+          disabled={isLoading}
           data-testid="google-login-btn"
         >
           <GoogleIcon />
@@ -155,10 +163,11 @@ export default function LoginPage() {
         <button 
           className="auth-btn bg-black text-white border border-white/20 hover:bg-zinc-900" 
           onClick={handleAppleLogin}
+          disabled={isLoading}
           data-testid="apple-login-btn"
         >
           <AppleIcon />
-          Continue with Apple
+          {isLoading ? 'Signing in...' : 'Continue with Apple'}
         </button>
       </div>
       
