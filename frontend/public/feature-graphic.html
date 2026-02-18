@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EdgeLog Feature Graphic</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1024px;
+      height: 500px;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 60px;
+      color: white;
+    }
+    .left {
+      flex: 1;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .logo svg {
+      margin-right: 15px;
+    }
+    .logo h1 {
+      font-size: 48px;
+      font-weight: bold;
+      letter-spacing: 4px;
+    }
+    .tagline {
+      font-size: 24px;
+      color: #22C55E;
+      margin-bottom: 30px;
+    }
+    .features {
+      display: flex;
+      gap: 20px;
+    }
+    .feature {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 12px 20px;
+      border-radius: 30px;
+      font-size: 14px;
+      color: #22C55E;
+    }
+    .right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .phone {
+      width: 180px;
+      height: 360px;
+      background: #111;
+      border-radius: 30px;
+      border: 3px solid #333;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-screen {
+      flex: 1;
+      background: #0a0a0a;
+      border-radius: 20px;
+      padding: 15px;
+    }
+    .stat-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .stat {
+      flex: 1;
+      background: #1a1a1a;
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: bold;
+      color: #22C55E;
+    }
+    .stat-label {
+      font-size: 8px;
+      color: #666;
+    }
+    .chart {
+      height: 80px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="left">
+    <div class="logo">
+      <svg width="60" height="60" viewBox="0 0 100 100">
+        <rect width="100" height="100" rx="22" fill="#0a0a0a"/>
+        <g transform="translate(15, 20)">
+          <polyline points="5,55 20,30 35,45 55,15" fill="none" stroke="#22C55E" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="55" y1="15" x2="65" y2="5" stroke="#22C55E" stroke-width="6" stroke-linecap="round"/>
+          <line x1="65" y1="5" x2="52" y2="8" stroke="#22C55E" stroke-width="6" stroke-linecap="round"/>
+          <line x1="65" y1="5" x2="62" y2="18" stroke="#22C55E" stroke-width="6" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <h1>EDGELOG</h1>
+    </div>
+    <p class="tagline">Your Trading Edge, Journaled</p>
+    <div class="features">
+      <span class="feature">Trade Tracking</span>
+      <span class="feature">Analytics</span>
+      <span class="feature">AI Insights</span>
+    </div>
+  </div>
+  <div class="right">
+    <div class="phone">
+      <div class="phone-screen">
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-value">73%</div>
+            <div class="stat-label">WIN RATE</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">1:2.4</div>
+            <div class="stat-label">AVG R:R</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat">
+            <div class="stat-value">92%</div>
+            <div class="stat-label">DISCIPLINE</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">47</div>
+            <div class="stat-label">TRADES</div>
+          </div>
+        </div>
+        <div class="chart">
+          <svg viewBox="0 0 150 60" width="100%" height="100%">
+            <defs>
+              <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#22C55E;stop-opacity:0.3"/>
+                <stop offset="100%" style="stop-color:#22C55E;stop-opacity:0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,50 L25,40 L50,45 L75,25 L100,30 L125,15 L150,10 L150,60 L0,60 Z" fill="url(#grad)"/>
+            <path d="M0,50 L25,40 L50,45 L75,25 L100,30 L125,15 L150,10" stroke="#22C55E" stroke-width="2" fill="none"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
