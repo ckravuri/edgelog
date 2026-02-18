@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EdgeLog - Google Play Store Screenshots</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a; 
+            color: #fff; 
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { 
+            text-align: center; 
+            margin-bottom: 10px; 
+            color: #22c55e;
+            font-size: 2.5rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+        }
+        .section { margin-bottom: 50px; }
+        h2 { 
+            color: #22c55e; 
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        .specs {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        .grid { 
+            display: grid; 
+            gap: 20px;
+        }
+        .grid-phone { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+        .grid-tablet { grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); }
+        .grid-chromebook { grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); }
+        .card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #333;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: #22c55e;
+        }
+        .card img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .card-info {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-name { font-weight: 600; }
+        .card-size { color: #888; font-size: 0.85rem; }
+        .download-btn {
+            background: #22c55e;
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+        .download-btn:hover { background: #16a34a; }
+        .download-all {
+            display: inline-block;
+            background: #22c55e;
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .instructions {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 40px;
+        }
+        .instructions h3 { color: #22c55e; margin-bottom: 10px; }
+        .instructions ol { padding-left: 20px; }
+        .instructions li { margin-bottom: 8px; color: #ccc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>EdgeLog Screenshots</h1>
+        <p class="subtitle">Google Play Store Assets - Ready to Upload</p>
+
+        <div class="instructions">
+            <h3>How to Download:</h3>
+            <ol>
+                <li>Right-click on any image and select "Save image as..."</li>
+                <li>Or click the "Download" button on each card</li>
+                <li>Upload to Google Play Console in the appropriate section</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>Phone Screenshots (Required: 2-8)</h2>
+            <p class="specs">Format: PNG | Dimensions: 1080 x 1920 (9:16 portrait)</p>
+            <div class="grid grid-phone">
+                <div class="card">
+                    <img src="android-screenshots/phone_01.png" alt="Login Screen">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">1. Login</div>
+                            <div class="card-size">1080x1920</div>
+                        </div>
+                        <a href="android-screenshots/phone_01.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/phone_02.png" alt="Dashboard">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">2. Dashboard</div>
+                            <div class="card-size">1080x1920</div>
+                        </div>
+                        <a href="android-screenshots/phone_02.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/phone_03.png" alt="Add Trade">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">3. Add Trade</div>
+                            <div class="card-size">1080x1920</div>
+                        </div>
+                        <a href="android-screenshots/phone_03.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/phone_04.png" alt="Trade History">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">4. History</div>
+                            <div class="card-size">1080x1920</div>
+                        </div>
+                        <a href="android-screenshots/phone_04.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/phone_05.png" alt="AI Report">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">5. AI Report</div>
+                            <div class="card-size">1080x1920</div>
+                        </div>
+                        <a href="android-screenshots/phone_05.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>7-inch Tablet Screenshots (Optional: up to 8)</h2>
+            <p class="specs">Format: PNG | Dimensions: 1280 x 800 (16:10 landscape)</p>
+            <div class="grid grid-tablet">
+                <div class="card">
+                    <img src="android-screenshots/tablet7_01.png" alt="Tablet Login">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">1. Login</div>
+                            <div class="card-size">1280x800</div>
+                        </div>
+                        <a href="android-screenshots/tablet7_01.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/tablet7_02.png" alt="Tablet Dashboard">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">2. Dashboard</div>
+                            <div class="card-size">1280x800</div>
+                        </div>
+                        <a href="android-screenshots/tablet7_02.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/tablet7_03.png" alt="Tablet Add Trade">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">3. Add Trade</div>
+                            <div class="card-size">1280x800</div>
+                        </div>
+                        <a href="android-screenshots/tablet7_03.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>10-inch Tablet Screenshots (Optional: up to 8)</h2>
+            <p class="specs">Format: PNG | Dimensions: 1920 x 1200 (16:10 landscape) | Min: 1080px per side</p>
+            <div class="grid grid-tablet">
+                <div class="card">
+                    <img src="android-screenshots/tablet10_01.png" alt="10-inch Dashboard">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">1. Dashboard</div>
+                            <div class="card-size">1920x1200</div>
+                        </div>
+                        <a href="android-screenshots/tablet10_01.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/tablet10_02.png" alt="10-inch History">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">2. History</div>
+                            <div class="card-size">1920x1200</div>
+                        </div>
+                        <a href="android-screenshots/tablet10_02.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/tablet10_03.png" alt="10-inch AI Report">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">3. AI Report</div>
+                            <div class="card-size">1920x1200</div>
+                        </div>
+                        <a href="android-screenshots/tablet10_03.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Chromebook Screenshots (Required: 4-8)</h2>
+            <p class="specs">Format: PNG | Dimensions: 1920 x 1080 (16:9 landscape) | Min: 1080px per side</p>
+            <div class="grid grid-chromebook">
+                <div class="card">
+                    <img src="android-screenshots/chromebook_01.png" alt="Chromebook Login">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">1. Login</div>
+                            <div class="card-size">1920x1080</div>
+                        </div>
+                        <a href="android-screenshots/chromebook_01.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/chromebook_02.png" alt="Chromebook Dashboard">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">2. Dashboard</div>
+                            <div class="card-size">1920x1080</div>
+                        </div>
+                        <a href="android-screenshots/chromebook_02.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/chromebook_03.png" alt="Chromebook Add Trade">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">3. Add Trade</div>
+                            <div class="card-size">1920x1080</div>
+                        </div>
+                        <a href="android-screenshots/chromebook_03.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+                <div class="card">
+                    <img src="android-screenshots/chromebook_04.png" alt="Chromebook History">
+                    <div class="card-info">
+                        <div>
+                            <div class="card-name">4. History</div>
+                            <div class="card-size">1920x1080</div>
+                        </div>
+                        <a href="android-screenshots/chromebook_04.png" download class="download-btn">Download</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
