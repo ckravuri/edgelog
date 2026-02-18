@@ -63,7 +63,7 @@ export default function LoginPage() {
       const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
       
       const options = {
-        clientId: 'com.edgelog.app',
+        clientId: 'com.ravuri.edgelog',
         redirectURI: window.location.origin,
         scopes: 'email name',
         state: Math.random().toString(36).substring(7),
