@@ -160,15 +160,18 @@ export default function LoginPage() {
           Continue with Google
         </button>
         
-        <button 
-          className="auth-btn bg-black text-white border border-white/20 hover:bg-zinc-900" 
-          onClick={handleAppleLogin}
-          disabled={isLoading}
-          data-testid="apple-login-btn"
-        >
-          <AppleIcon />
-          {isLoading ? 'Signing in...' : 'Continue with Apple'}
-        </button>
+        {/* Show Apple Sign-In only on iOS */}
+        {isIosNative && (
+          <button 
+            className="auth-btn bg-black text-white border border-white/20 hover:bg-zinc-900" 
+            onClick={handleAppleLogin}
+            disabled={isLoading}
+            data-testid="apple-login-btn"
+          >
+            <AppleIcon />
+            {isLoading ? 'Signing in...' : 'Continue with Apple'}
+          </button>
+        )}
       </div>
       
       {/* Footer */}
