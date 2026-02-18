@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@capacitor-community/apple-sign-in": "^5.0.0",
     "@capacitor/android": "5",
     "@capacitor/cli": "5",
     "@capacitor/core": "5",
