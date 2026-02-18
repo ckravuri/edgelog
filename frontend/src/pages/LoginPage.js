@@ -23,6 +23,11 @@ const AppleIcon = () => (
 export default function LoginPage() {
   const navigate = useNavigate();
   const [isChecking, setIsChecking] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Check if running on iOS native app
+  const isIosNative = Capacitor.getPlatform() === 'ios';
 
   useEffect(() => {
     // Check if already authenticated
@@ -49,9 +54,65 @@ export default function LoginPage() {
     window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
   };
 
-  const handleAppleLogin = () => {
-    // Apple Sign-In will be implemented when Apple Developer account is ready
-    alert('Apple Sign-In coming soon! Please use Google Sign-In for now.');
+  const handleAppleLogin = async () => {
+    // Only use native Apple Sign-In on iOS
+    if (!isIosNative) {
+      // On web/Android, show message or use web-based Apple Sign-In
+      setError('Apple Sign-In is available on iOS devices. Please use Google Sign-In on this device.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Dynamically import the plugin only on iOS
+      const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
+      
+      const options = {
+        clientId: 'com.edgelog.app',
+        redirectURI: window.location.origin,
+        scopes: 'email name',
+        state: Math.random().toString(36).substring(7),
+        nonce: Math.random().toString(36).substring(7),
+      };
+
+      const result = await SignInWithApple.authorize(options);
+      
+      if (result.response && result.response.identityToken) {
+        // Send token to backend for verification
+        const backendResponse = await fetch(`${API}/auth/apple`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            identity_token: result.response.identityToken,
+            user_id: result.response.user,
+            email: result.response.email,
+            name: result.response.givenName 
+              ? `${result.response.givenName} ${result.response.familyName || ''}`.trim()
+              : null,
+          }),
+        });
+
+        if (!backendResponse.ok) {
+          const errorData = await backendResponse.json();
+          throw new Error(errorData.detail || 'Authentication failed');
+        }
+
+        // Success - navigate to home
+        navigate('/', { replace: true });
+      } else {
+        throw new Error('Failed to get identity token from Apple');
+      }
+    } catch (err) {
+      console.error('Apple Sign-In error:', err);
+      setError(err.message || 'Apple Sign-In failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isChecking) {
