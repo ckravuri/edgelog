@@ -276,7 +276,7 @@ class AppleSignInRequest(BaseModel):
     name: Optional[str] = None
 
 APPLE_PUBLIC_KEY_URL = "https://appleid.apple.com/auth/keys"
-APPLE_APP_ID = "com.edgelog.app"  # Your bundle identifier
+APPLE_APP_ID = "com.ravuri.edgelog"  # Your bundle identifier
 
 async def fetch_apple_public_keys():
     """Fetch Apple's public keys for token verification"""
