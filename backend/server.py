@@ -267,6 +267,154 @@ async def logout(request: Request, response: Response):
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}
 
+# ==================== APPLE SIGN-IN ====================
+
+class AppleSignInRequest(BaseModel):
+    identity_token: str
+    user_id: str
+    email: Optional[str] = None
+    name: Optional[str] = None
+
+APPLE_PUBLIC_KEY_URL = "https://appleid.apple.com/auth/keys"
+APPLE_APP_ID = "com.edgelog.app"  # Your bundle identifier
+
+async def fetch_apple_public_keys():
+    """Fetch Apple's public keys for token verification"""
+    async with httpx.AsyncClient() as client_http:
+        response = await client_http.get(APPLE_PUBLIC_KEY_URL)
+        if response.status_code != 200:
+            raise HTTPException(status_code=503, detail="Unable to fetch Apple public keys")
+        return response.json()
+
+def verify_apple_identity_token(identity_token: str, apple_keys: dict) -> dict:
+    """Verify the Apple identity token and return decoded claims"""
+    try:
+        # Get the unverified header to find the key ID
+        unverified_header = jwt.get_unverified_header(identity_token)
+        kid = unverified_header.get('kid')
+        
+        if not kid:
+            raise ValueError("Token missing 'kid' in header")
+        
+        # Find the matching public key
+        matching_key = None
+        for key in apple_keys.get('keys', []):
+            if key.get('kid') == kid:
+                matching_key = key
+                break
+        
+        if not matching_key:
+            raise ValueError(f"No matching key found for kid: {kid}")
+        
+        # Convert JWK to RSA public key
+        public_key = RSAAlgorithm.from_jwk(json.dumps(matching_key))
+        
+        # Verify and decode the token
+        decoded_token = jwt.decode(
+            identity_token,
+            public_key,
+            algorithms=['RS256'],
+            audience=APPLE_APP_ID,
+            options={"verify_aud": True}
+        )
+        
+        return decoded_token
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Apple identity token has expired")
+    except jwt.InvalidAudienceError:
+        raise HTTPException(status_code=401, detail="Token audience does not match")
+    except jwt.InvalidSignatureError:
+        raise HTTPException(status_code=401, detail="Token signature verification failed")
+    except Exception as e:
+        logger.error(f"Apple token verification failed: {str(e)}")
+        raise HTTPException(status_code=401, detail="Failed to verify Apple identity token")
+
+@api_router.post("/auth/apple")
+async def apple_sign_in(request: AppleSignInRequest, response: Response):
+    """Handle Apple Sign-In authentication"""
+    try:
+        # Fetch Apple's public keys
+        apple_keys = await fetch_apple_public_keys()
+        
+        # Verify the identity token
+        decoded_token = verify_apple_identity_token(request.identity_token, apple_keys)
+        
+        # Extract user info from token
+        apple_user_id = decoded_token.get('sub')  # Unique Apple user ID
+        email = decoded_token.get('email') or request.email
+        is_private_email = decoded_token.get('is_private_email', False)
+        
+        if not apple_user_id:
+            raise HTTPException(status_code=401, detail="Token does not contain user identifier")
+        
+        # Check if user exists (by apple_user_id or email)
+        existing_user = await db.users.find_one(
+            {"$or": [
+                {"apple_user_id": apple_user_id},
+                {"email": email} if email else {"_id": None}
+            ]},
+            {"_id": 0}
+        )
+        
+        if existing_user:
+            user_id = existing_user["user_id"]
+            # Update with Apple ID if not set
+            update_data = {"apple_user_id": apple_user_id}
+            if request.name and not existing_user.get("name"):
+                update_data["name"] = request.name
+            await db.users.update_one(
+                {"user_id": user_id},
+                {"$set": update_data}
+            )
+        else:
+            # Create new user
+            user_id = f"user_{uuid.uuid4().hex[:12]}"
+            name = request.name or email.split('@')[0] if email else "Apple User"
+            new_user = {
+                "user_id": user_id,
+                "apple_user_id": apple_user_id,
+                "email": email,
+                "name": name,
+                "picture": None,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "max_trades_per_day": 5
+            }
+            await db.users.insert_one(new_user)
+        
+        # Create session
+        session_token = f"apple_session_{uuid.uuid4().hex}"
+        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        
+        session_doc = {
+            "session_id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "session_token": session_token,
+            "expires_at": expires_at.isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.user_sessions.insert_one(session_doc)
+        
+        # Set cookie
+        response.set_cookie(
+            key="session_token",
+            value=session_token,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            path="/",
+            max_age=7 * 24 * 60 * 60
+        )
+        
+        user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+        
+        return {"user": user_doc, "session_token": session_token}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Apple sign-in error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Authentication failed")
+
 # ==================== CLOUDINARY ENDPOINTS ====================
 
 @api_router.get("/cloudinary/signature")
