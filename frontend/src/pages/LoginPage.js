@@ -55,13 +55,6 @@ export default function LoginPage() {
   };
 
   const handleAppleLogin = async () => {
-    // Only use native Apple Sign-In on iOS
-    if (!isIosNative) {
-      // On web/Android, show message or use web-based Apple Sign-In
-      setError('Apple Sign-In is available on iOS devices. Please use Google Sign-In on this device.');
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
