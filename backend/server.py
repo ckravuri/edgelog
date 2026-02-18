@@ -342,7 +342,7 @@ async def apple_sign_in(request: AppleSignInRequest, response: Response):
         # Extract user info from token
         apple_user_id = decoded_token.get('sub')  # Unique Apple user ID
         email = decoded_token.get('email') or request.email
-        is_private_email = decoded_token.get('is_private_email', False)
+        _ = decoded_token.get('is_private_email', False)
         
         if not apple_user_id:
             raise HTTPException(status_code=401, detail="Token does not contain user identifier")
