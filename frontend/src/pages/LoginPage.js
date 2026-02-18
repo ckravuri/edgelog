@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { TrendingUp } from "lucide-react";
+import { Capacitor } from '@capacitor/core';
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
