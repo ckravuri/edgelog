@@ -135,25 +135,115 @@ export default function SettingsPage({ user }) {
 
         {/* Plan Info */}
         <div className="animate-fadeIn" style={{ animationDelay: '0.05s' }}>
-          <p className="stat-label mb-3">Plan</p>
+          <p className="stat-label mb-3">Subscription</p>
           <div className="stat-card" data-testid="plan-card">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-yellow-500" />
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  subscriptionStatus?.is_premium 
+                    ? 'bg-gradient-to-br from-yellow-500/30 to-orange-500/30' 
+                    : 'bg-yellow-500/20'
+                }`}>
+                  <Crown className={`w-5 h-5 ${
+                    subscriptionStatus?.is_premium ? 'text-yellow-400' : 'text-yellow-500'
+                  }`} />
                 </div>
                 <div>
-                  <p className="font-semibold">Free Plan</p>
-                  <p className="text-xs text-zinc-500">14-day trade history</p>
+                  <p className="font-semibold">
+                    {subscriptionStatus?.is_premium ? 'Premium' : 'Free Plan'}
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    {subscriptionStatus?.is_premium 
+                      ? `Expires: ${new Date(subscriptionStatus.expires_at).toLocaleDateString()}`
+                      : '14-day trade history'}
+                  </p>
                 </div>
               </div>
-              <button 
-                className="px-3 py-1.5 bg-white text-black text-xs font-bold uppercase rounded hover:bg-zinc-200 transition-colors"
-                data-testid="upgrade-btn"
-              >
-                Upgrade
-              </button>
+              {!subscriptionStatus?.is_premium && (
+                <button 
+                  onClick={() => navigate('/premium')}
+                  className="px-3 py-1.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold uppercase rounded hover:opacity-90 transition-opacity"
+                  data-testid="upgrade-btn"
+                >
+                  Upgrade
+                </button>
+              )}
             </div>
+            
+            {/* AI Reports Usage */}
+            {!subscriptionStatus?.is_premium && (
+              <div className="mt-4 pt-4 border-t border-white/5">
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-400">AI Reports This Week</span>
+                  <span className="font-medium">
+                    {subscriptionStatus?.ai_reports_used || 0} / {subscriptionStatus?.ai_reports_limit || 1}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Premium Features */}
+        <div className="animate-fadeIn" style={{ animationDelay: '0.08s' }}>
+          <p className="stat-label mb-3">Tools</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => navigate('/import')}
+              className="w-full stat-card flex items-center justify-between hover:bg-white/5 transition-colors"
+              data-testid="import-trades-btn"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <Upload className="w-5 h-5 text-blue-500" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold">Import MT4/MT5 Trades</p>
+                  <p className="text-xs text-zinc-500">
+                    {subscriptionStatus?.is_premium ? 'Premium feature' : 'Premium only'}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-zinc-500" />
+            </button>
+            
+            <button
+              onClick={async () => {
+                if (!subscriptionStatus?.is_premium) {
+                  navigate('/premium');
+                  return;
+                }
+                try {
+                  const response = await fetch(`${API}/export/trades?format=csv`, { credentials: 'include' });
+                  if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'edgelog_trades.csv';
+                    a.click();
+                    toast.success('Trades exported successfully!');
+                  }
+                } catch (error) {
+                  toast.error('Failed to export trades');
+                }
+              }}
+              className="w-full stat-card flex items-center justify-between hover:bg-white/5 transition-colors"
+              data-testid="export-trades-btn"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                  <Download className="w-5 h-5 text-green-500" />
+                </div>
+                <div className="text-left">
+                  <p className="font-semibold">Export Trades</p>
+                  <p className="text-xs text-zinc-500">
+                    {subscriptionStatus?.is_premium ? 'Download CSV' : 'Premium only'}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-zinc-500" />
+            </button>
           </div>
         </div>
 
