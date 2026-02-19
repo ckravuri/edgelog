@@ -202,6 +202,19 @@ export default function PremiumPage() {
               ? new Date(subscriptionStatus.expires_at).toLocaleDateString() 
               : 'Never'}
           </p>
+          
+          {/* Show upgrade button for trial users */}
+          {isTrial && (
+            <button
+              onClick={() => {
+                // Reset state to show purchase options
+                setSubscriptionStatus({ ...subscriptionStatus, is_premium: false });
+              }}
+              className="mt-6 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-black font-bold rounded-xl"
+            >
+              Subscribe Now - Keep Premium Forever
+            </button>
+          )}
         </div>
       </div>
     );
