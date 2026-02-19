@@ -226,16 +226,24 @@ async def create_session(request: Request, response: Response):
             }}
         )
     else:
+        # New user - give 7-day free trial!
         user_id = f"user_{uuid.uuid4().hex[:12]}"
+        trial_expires = datetime.now(timezone.utc) + timedelta(days=7)
         new_user = {
             "user_id": user_id,
             "email": user_data["email"],
             "name": user_data["name"],
             "picture": user_data.get("picture"),
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "max_trades_per_day": 5
+            "max_trades_per_day": 5,
+            # 7-day free trial
+            "subscription_tier": "premium",
+            "subscription_expires_at": trial_expires.isoformat(),
+            "is_trial": True,
+            "trial_started_at": datetime.now(timezone.utc).isoformat()
         }
         await db.users.insert_one(new_user)
+        logger.info(f"New user {user_id} registered with 7-day free trial")
     
     session_token = user_data.get("session_token", f"session_{uuid.uuid4().hex}")
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
