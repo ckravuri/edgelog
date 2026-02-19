@@ -640,12 +640,75 @@ async def get_daily_analytics(user: User = Depends(get_current_user)):
 
 # ==================== AI REPORT GENERATION ====================
 
+async def check_ai_report_limit(user: User) -> tuple[bool, str]:
+    """Check if user can generate AI report based on subscription"""
+    # Premium users have unlimited reports
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    if user_doc and user_doc.get("subscription_tier") == "premium":
+        # Check if subscription is still valid
+        expires_at = user_doc.get("subscription_expires_at")
+        if expires_at:
+            if isinstance(expires_at, str):
+                expires_at = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            if expires_at > datetime.now(timezone.utc):
+                return True, ""
+    
+    # Free users: 1 report per week
+    now = datetime.now(timezone.utc)
+    week_start = user_doc.get("ai_reports_week_start") if user_doc else None
+    reports_this_week = user_doc.get("ai_reports_this_week", 0) if user_doc else 0
+    
+    # Reset weekly counter if new week
+    if week_start:
+        if isinstance(week_start, str):
+            week_start = datetime.fromisoformat(week_start.replace("Z", "+00:00"))
+        if (now - week_start).days >= 7:
+            reports_this_week = 0
+            week_start = now
+    else:
+        week_start = now
+    
+    if reports_this_week >= 1:
+        days_until_reset = 7 - (now - week_start).days
+        return False, f"Free users get 1 AI report per week. Upgrade to Premium for unlimited reports! ({days_until_reset} days until reset)"
+    
+    return True, ""
+
+async def increment_ai_report_count(user_id: str):
+    """Increment the AI report counter for free users"""
+    now = datetime.now(timezone.utc)
+    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    
+    week_start = user_doc.get("ai_reports_week_start") if user_doc else None
+    reports_this_week = user_doc.get("ai_reports_this_week", 0) if user_doc else 0
+    
+    if week_start:
+        if isinstance(week_start, str):
+            week_start = datetime.fromisoformat(week_start.replace("Z", "+00:00"))
+        if (now - week_start).days >= 7:
+            reports_this_week = 0
+            week_start = now
+    else:
+        week_start = now
+    
+    await db.users.update_one(
+        {"user_id": user_id},
+        {"$set": {
+            "ai_reports_this_week": reports_this_week + 1,
+            "ai_reports_week_start": week_start.isoformat()
+        }}
+    )
+
 @api_router.post("/reports/generate")
 async def generate_ai_report(
     period: str = Query("weekly", enum=["weekly", "monthly"]),
     user: User = Depends(get_current_user)
 ):
     """Generate AI-powered performance report"""
+    # Check AI report limit
+    can_generate, error_msg = await check_ai_report_limit(user)
+    if not can_generate:
+        raise HTTPException(status_code=403, detail=error_msg)
     # Determine date range
     if period == "weekly":
         days = 7
