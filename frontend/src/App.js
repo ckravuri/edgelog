@@ -13,6 +13,8 @@ import SettingsPage from "@/pages/SettingsPage";
 import ReportsPage from "@/pages/ReportsPage";
 import HistoryPage from "@/pages/HistoryPage";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import PremiumPage from "@/pages/PremiumPage";
+import ImportPage from "@/pages/ImportPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function AppRouter() {
@@ -55,6 +57,16 @@ function AppRouter() {
       <Route path="/history" element={
         <ProtectedRoute>
           <HistoryPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/premium" element={
+        <ProtectedRoute>
+          <PremiumPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/import" element={
+        <ProtectedRoute>
+          <ImportPage />
         </ProtectedRoute>
       } />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
