@@ -861,6 +861,9 @@ Keep it professional, motivating, and actionable. Use trader's first name: {user
     await db.reports.insert_one(report_doc)
     report_doc.pop("_id", None)
     
+    # Increment AI report count for free users
+    await increment_ai_report_count(user.user_id)
+    
     return report_doc
 
 @api_router.get("/reports")
