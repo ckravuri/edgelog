@@ -933,12 +933,351 @@ async def update_reminder_settings(
 
 @api_router.post("/admin/cleanup-old-trades")
 async def cleanup_old_trades():
-    """Cleanup trades older than 14 days"""
+    """Cleanup trades older than 14 days for FREE users only"""
     cutoff_date = datetime.now(timezone.utc) - timedelta(days=FREE_PLAN_DAYS)
-    result = await db.trades.delete_many(
-        {"created_at": {"$lt": cutoff_date.isoformat()}}
-    )
+    
+    # Get free users only
+    free_users = await db.users.find(
+        {"$or": [
+            {"subscription_tier": {"$exists": False}},
+            {"subscription_tier": "free"},
+            {"subscription_tier": None}
+        ]},
+        {"user_id": 1, "_id": 0}
+    ).to_list(10000)
+    
+    free_user_ids = [u["user_id"] for u in free_users]
+    
+    result = await db.trades.delete_many({
+        "user_id": {"$in": free_user_ids},
+        "created_at": {"$lt": cutoff_date.isoformat()}
+    })
     return {"deleted_count": result.deleted_count}
+
+# ==================== SUBSCRIPTION ENDPOINTS ====================
+
+class SubscriptionUpdate(BaseModel):
+    subscription_tier: str
+    expires_at: Optional[str] = None
+    revenuecat_user_id: Optional[str] = None
+
+@api_router.get("/subscription/status")
+async def get_subscription_status(user: User = Depends(get_current_user)):
+    """Get current subscription status"""
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    
+    subscription_tier = user_doc.get("subscription_tier", "free") if user_doc else "free"
+    expires_at = user_doc.get("subscription_expires_at") if user_doc else None
+    
+    # Check if premium expired
+    is_premium = False
+    if subscription_tier == "premium" and expires_at:
+        if isinstance(expires_at, str):
+            expires_at_dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        else:
+            expires_at_dt = expires_at
+        is_premium = expires_at_dt > datetime.now(timezone.utc)
+    
+    # AI report usage
+    ai_reports_this_week = user_doc.get("ai_reports_this_week", 0) if user_doc else 0
+    ai_reports_week_start = user_doc.get("ai_reports_week_start") if user_doc else None
+    
+    # Check if week reset needed
+    if ai_reports_week_start:
+        if isinstance(ai_reports_week_start, str):
+            week_start_dt = datetime.fromisoformat(ai_reports_week_start.replace("Z", "+00:00"))
+        else:
+            week_start_dt = ai_reports_week_start
+        if (datetime.now(timezone.utc) - week_start_dt).days >= 7:
+            ai_reports_this_week = 0
+    
+    return {
+        "subscription_tier": "premium" if is_premium else "free",
+        "is_premium": is_premium,
+        "expires_at": expires_at,
+        "ai_reports_used": ai_reports_this_week,
+        "ai_reports_limit": None if is_premium else 1,
+        "features": {
+            "ads_free": is_premium,
+            "unlimited_history": is_premium,
+            "unlimited_ai_reports": is_premium,
+            "mt4_mt5_import": is_premium,
+            "export_share": is_premium
+        }
+    }
+
+@api_router.post("/subscription/webhook")
+async def subscription_webhook(request: Request):
+    """Handle RevenueCat webhook for subscription updates"""
+    try:
+        body = await request.json()
+        event_type = body.get("event", {}).get("type")
+        app_user_id = body.get("event", {}).get("app_user_id")
+        
+        if not app_user_id:
+            return {"status": "ignored", "reason": "no app_user_id"}
+        
+        # Find user by RevenueCat ID or email
+        user = await db.users.find_one(
+            {"$or": [
+                {"revenuecat_user_id": app_user_id},
+                {"user_id": app_user_id}
+            ]},
+            {"_id": 0}
+        )
+        
+        if not user:
+            logger.warning(f"User not found for RevenueCat ID: {app_user_id}")
+            return {"status": "ignored", "reason": "user not found"}
+        
+        if event_type in ["INITIAL_PURCHASE", "RENEWAL", "PRODUCT_CHANGE"]:
+            # Activate premium
+            expiration = body.get("event", {}).get("expiration_at_ms")
+            expires_at = datetime.fromtimestamp(expiration / 1000, tz=timezone.utc) if expiration else None
+            
+            await db.users.update_one(
+                {"user_id": user["user_id"]},
+                {"$set": {
+                    "subscription_tier": "premium",
+                    "subscription_expires_at": expires_at.isoformat() if expires_at else None,
+                    "revenuecat_user_id": app_user_id
+                }}
+            )
+            logger.info(f"Premium activated for user: {user['user_id']}")
+            
+        elif event_type in ["CANCELLATION", "EXPIRATION"]:
+            # Downgrade to free
+            await db.users.update_one(
+                {"user_id": user["user_id"]},
+                {"$set": {"subscription_tier": "free"}}
+            )
+            logger.info(f"Premium cancelled for user: {user['user_id']}")
+        
+        return {"status": "success"}
+        
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        raise HTTPException(status_code=500, detail="Webhook processing failed")
+
+# ==================== MT4/MT5 IMPORT ====================
+
+class MT4MT5ImportRequest(BaseModel):
+    file_content: str  # Base64 encoded or raw HTML/CSV content
+    file_type: str = "html"  # "html" or "csv"
+    platform: str = "mt4"  # "mt4" or "mt5"
+
+@api_router.post("/import/mt4mt5")
+async def import_mt4_mt5_trades(
+    import_data: MT4MT5ImportRequest,
+    user: User = Depends(get_current_user)
+):
+    """Import trades from MT4/MT5 report (Premium only)"""
+    # Check premium status
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    is_premium = user_doc.get("subscription_tier") == "premium" if user_doc else False
+    
+    if not is_premium:
+        raise HTTPException(
+            status_code=403, 
+            detail="MT4/MT5 import is a Premium feature. Upgrade to access this feature!"
+        )
+    
+    try:
+        import re
+        import base64
+        from html.parser import HTMLParser
+        
+        # Decode content if base64
+        try:
+            content = base64.b64decode(import_data.file_content).decode('utf-8')
+        except:
+            content = import_data.file_content
+        
+        trades_imported = []
+        
+        if import_data.file_type == "html":
+            # Parse MT4/MT5 HTML report
+            # Look for trade rows in the Account History section
+            
+            # Simple regex patterns for MT4/MT5 HTML reports
+            # MT4 pattern: <tr>...<td>ticket</td><td>time</td><td>type</td><td>size</td><td>item</td><td>price</td>...
+            trade_pattern = r'<tr[^>]*>.*?<td[^>]*>(\d+)</td>.*?<td[^>]*>([\d\.:\s]+)</td>.*?<td[^>]*>(buy|sell)</td>.*?<td[^>]*>([\d\.]+)</td>.*?<td[^>]*>([^<]+)</td>.*?<td[^>]*>([\d\.]+)</td>.*?<td[^>]*>([\d\.]+)</td>.*?<td[^>]*>.*?</td>.*?<td[^>]*>.*?</td>.*?<td[^>]*>([-\d\.]+)</td>.*?</tr>'
+            
+            matches = re.findall(trade_pattern, content, re.IGNORECASE | re.DOTALL)
+            
+            for match in matches:
+                try:
+                    ticket, time_str, trade_type, lot_size, symbol, open_price, close_price, pnl = match
+                    
+                    # Determine outcome
+                    pnl_float = float(pnl)
+                    if pnl_float > 0:
+                        outcome = "win"
+                    elif pnl_float < 0:
+                        outcome = "loss"
+                    else:
+                        outcome = "breakeven"
+                    
+                    trade_doc = {
+                        "trade_id": f"trade_{uuid.uuid4().hex[:12]}",
+                        "user_id": user.user_id,
+                        "trading_pair": symbol.strip().upper(),
+                        "trade_type": trade_type.lower(),
+                        "entry_price": float(open_price),
+                        "close_price": float(close_price),
+                        "lot_size": float(lot_size),
+                        "pnl": pnl_float,
+                        "outcome": outcome,
+                        "trade_date": datetime.now(timezone.utc).isoformat(),
+                        "notes": f"Imported from {import_data.platform.upper()} - Ticket #{ticket}",
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "imported_from": import_data.platform
+                    }
+                    trades_imported.append(trade_doc)
+                except Exception as e:
+                    logger.warning(f"Failed to parse trade row: {e}")
+                    continue
+        
+        elif import_data.file_type == "csv":
+            # Parse CSV format
+            import csv
+            from io import StringIO
+            
+            reader = csv.DictReader(StringIO(content))
+            for row in reader:
+                try:
+                    # Common CSV column names
+                    symbol = row.get("Symbol", row.get("Item", row.get("symbol", "")))
+                    trade_type = row.get("Type", row.get("type", "buy")).lower()
+                    if "buy" not in trade_type and "sell" not in trade_type:
+                        continue
+                    trade_type = "buy" if "buy" in trade_type else "sell"
+                    
+                    lot_size = float(row.get("Volume", row.get("Lots", row.get("Size", "0.01"))))
+                    open_price = float(row.get("Open Price", row.get("Price", "0")))
+                    close_price = float(row.get("Close Price", row.get("S/L", "0")))
+                    pnl = float(row.get("Profit", row.get("P/L", "0")))
+                    
+                    if pnl > 0:
+                        outcome = "win"
+                    elif pnl < 0:
+                        outcome = "loss"
+                    else:
+                        outcome = "breakeven"
+                    
+                    trade_doc = {
+                        "trade_id": f"trade_{uuid.uuid4().hex[:12]}",
+                        "user_id": user.user_id,
+                        "trading_pair": symbol.strip().upper(),
+                        "trade_type": trade_type,
+                        "entry_price": open_price,
+                        "close_price": close_price,
+                        "lot_size": lot_size,
+                        "pnl": pnl,
+                        "outcome": outcome,
+                        "trade_date": datetime.now(timezone.utc).isoformat(),
+                        "notes": f"Imported from {import_data.platform.upper()} CSV",
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "imported_from": import_data.platform
+                    }
+                    trades_imported.append(trade_doc)
+                except Exception as e:
+                    logger.warning(f"Failed to parse CSV row: {e}")
+                    continue
+        
+        # Insert trades
+        if trades_imported:
+            await db.trades.insert_many(trades_imported)
+        
+        return {
+            "success": True,
+            "trades_imported": len(trades_imported),
+            "message": f"Successfully imported {len(trades_imported)} trades from {import_data.platform.upper()}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Import error: {e}")
+        raise HTTPException(status_code=400, detail=f"Failed to parse file: {str(e)}")
+
+# ==================== EXPORT & SHARE ====================
+
+@api_router.get("/export/trades")
+async def export_trades(
+    format: str = Query("json", enum=["json", "csv"]),
+    user: User = Depends(get_current_user)
+):
+    """Export trades (Premium: Excel/CSV, Free: JSON only)"""
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    is_premium = user_doc.get("subscription_tier") == "premium" if user_doc else False
+    
+    # Free users can only export JSON
+    if format != "json" and not is_premium:
+        raise HTTPException(
+            status_code=403,
+            detail="CSV/Excel export is a Premium feature. Upgrade to access this feature!"
+        )
+    
+    # Get all trades
+    trades = await db.trades.find(
+        {"user_id": user.user_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(10000)
+    
+    if format == "json":
+        return {"trades": trades, "count": len(trades)}
+    
+    elif format == "csv":
+        import csv
+        from io import StringIO
+        
+        output = StringIO()
+        if trades:
+            writer = csv.DictWriter(output, fieldnames=trades[0].keys())
+            writer.writeheader()
+            writer.writerows(trades)
+        
+        csv_content = output.getvalue()
+        
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=edgelog_trades.csv"}
+        )
+
+@api_router.get("/export/report/{report_id}")
+async def export_report(
+    report_id: str,
+    format: str = Query("json", enum=["json", "pdf"]),
+    user: User = Depends(get_current_user)
+):
+    """Export a specific report"""
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    is_premium = user_doc.get("subscription_tier") == "premium" if user_doc else False
+    
+    if format == "pdf" and not is_premium:
+        raise HTTPException(
+            status_code=403,
+            detail="PDF export is a Premium feature. Upgrade to access this feature!"
+        )
+    
+    report = await db.reports.find_one(
+        {"report_id": report_id, "user_id": user.user_id},
+        {"_id": 0}
+    )
+    
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    if format == "json":
+        return report
+    
+    # For PDF, return data that frontend can use to generate PDF
+    # (actual PDF generation done client-side for better formatting)
+    return {
+        "report": report,
+        "export_format": "pdf_data",
+        "message": "Use this data to generate PDF on client side"
+    }
 
 # ==================== HEALTH CHECK ====================
 
