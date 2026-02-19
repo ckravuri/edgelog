@@ -1007,9 +1007,21 @@ async def get_subscription_status(user: User = Depends(get_current_user)):
         if (datetime.now(timezone.utc) - week_start_dt).days >= 7:
             ai_reports_this_week = 0
     
+    # Check trial status
+    is_trial = user_doc.get("is_trial", False) if user_doc else False
+    trial_days_left = 0
+    if is_trial and is_premium and expires_at:
+        if isinstance(expires_at, str):
+            expires_at_dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        else:
+            expires_at_dt = expires_at
+        trial_days_left = max(0, (expires_at_dt - datetime.now(timezone.utc)).days)
+    
     return {
         "subscription_tier": "premium" if is_premium else "free",
         "is_premium": is_premium,
+        "is_trial": is_trial and is_premium,
+        "trial_days_left": trial_days_left if is_trial else None,
         "expires_at": expires_at,
         "ai_reports_used": ai_reports_this_week,
         "ai_reports_limit": None if is_premium else 1,
@@ -1018,7 +1030,8 @@ async def get_subscription_status(user: User = Depends(get_current_user)):
             "unlimited_history": is_premium,
             "unlimited_ai_reports": is_premium,
             "mt4_mt5_import": is_premium,
-            "export_share": is_premium
+            "export_share": is_premium,
+            "download_reports": is_premium
         }
     }
 
