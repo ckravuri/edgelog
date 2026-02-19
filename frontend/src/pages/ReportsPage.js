@@ -1,6 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Sparkles, Download, Share2, Twitter, Facebook, MessageCircle, Loader2, TrendingUp, TrendingDown, Target, Trophy } from "lucide-react";
+import { ArrowLeft, Sparkles, Download, Share2, Twitter, Facebook, MessageCircle, Loader2, TrendingUp, TrendingDown, Target, Trophy, FileText, Crown } from "lucide-react";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import BottomNav from "@/components/BottomNav";
@@ -14,6 +14,24 @@ export default function ReportsPage({ user }) {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  useEffect(() => {
+    // Check premium status
+    const checkPremium = async () => {
+      try {
+        const response = await fetch(`${API}/subscription/status`, { credentials: 'include' });
+        if (response.ok) {
+          const data = await response.json();
+          setIsPremium(data.is_premium);
+        }
+      } catch (err) {
+        console.error('Failed to check premium:', err);
+      }
+    };
+    checkPremium();
+  }, []);
 
   const generateReport = async () => {
     setLoading(true);
@@ -23,7 +41,10 @@ export default function ReportsPage({ user }) {
         credentials: 'include'
       });
       
-      if (!response.ok) throw new Error('Failed to generate report');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to generate report');
+      }
       
       const data = await response.json();
       setReport(data);
@@ -31,9 +52,43 @@ export default function ReportsPage({ user }) {
       
     } catch (error) {
       console.error('Error generating report:', error);
-      toast.error('Failed to generate report');
+      toast.error(error.message || 'Failed to generate report');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const downloadAsPdf = async () => {
+    if (!report?.report_id) return;
+    
+    if (!isPremium) {
+      toast.error('PDF download is a Premium feature. Upgrade to access!');
+      navigate('/premium');
+      return;
+    }
+    
+    setDownloadingPdf(true);
+    try {
+      const response = await fetch(`${API}/export/report/${report.report_id}?format=pdf`, {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) throw new Error('Failed to download PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `edgelog_report_${report.report_id}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('PDF downloaded!');
+    } catch (error) {
+      console.error('PDF download error:', error);
+      toast.error('Failed to download PDF');
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
