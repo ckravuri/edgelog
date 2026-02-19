@@ -1091,7 +1091,7 @@ async def import_mt4_mt5_trades(
         # Decode content if base64
         try:
             content = base64.b64decode(import_data.file_content).decode('utf-8')
-        except:
+        except Exception:
             content = import_data.file_content
         
         trades_imported = []
