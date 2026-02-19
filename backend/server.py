@@ -64,6 +64,10 @@ class TradeOutcome(str, Enum):
     BREAKEVEN = "breakeven"
     OPEN = "open"
 
+class SubscriptionTier(str, Enum):
+    FREE = "free"
+    PREMIUM = "premium"
+
 class User(BaseModel):
     model_config = ConfigDict(extra="ignore")
     user_id: str
@@ -72,6 +76,12 @@ class User(BaseModel):
     picture: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     max_trades_per_day: int = 5
+    # Subscription fields
+    subscription_tier: SubscriptionTier = SubscriptionTier.FREE
+    subscription_expires_at: Optional[datetime] = None
+    revenuecat_user_id: Optional[str] = None
+    ai_reports_this_week: int = 0
+    ai_reports_week_start: Optional[datetime] = None
 
 class UserSession(BaseModel):
     model_config = ConfigDict(extra="ignore")
