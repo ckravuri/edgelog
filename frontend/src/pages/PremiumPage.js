@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Crown, Check, X, Zap, Shield, Download, Brain, ChevronLeft, Tag } from 'lucide-react';
+import { Crown, Check, X, Zap, Shield, Download, Brain, ChevronLeft, Tag, RefreshCw } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { toast } from 'sonner';
 
