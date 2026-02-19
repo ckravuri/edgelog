@@ -355,22 +355,49 @@ export default function ReportsPage({ user }) {
                 </button>
               </div>
 
-              {/* Download Button */}
-              <button
-                onClick={downloadAsImage}
-                disabled={downloading}
-                className="w-full h-12 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-                data-testid="download-report"
-              >
-                {downloading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <Download className="w-5 h-5" />
-                    <span className="font-semibold">Download as Image</span>
-                  </>
-                )}
-              </button>
+              {/* Download Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={downloadAsImage}
+                  disabled={downloading}
+                  className="h-12 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  data-testid="download-image"
+                >
+                  {downloading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      <span className="text-sm font-medium">Image</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={downloadAsPdf}
+                  disabled={downloadingPdf}
+                  className={`h-12 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 ${
+                    isPremium 
+                      ? 'bg-green-500/20 hover:bg-green-500/30 border border-green-500/30' 
+                      : 'bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/30'
+                  }`}
+                  data-testid="download-pdf"
+                >
+                  {downloadingPdf ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      {isPremium ? (
+                        <FileText className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Crown className="w-4 h-4 text-yellow-500" />
+                      )}
+                      <span className={`text-sm font-medium ${isPremium ? 'text-green-500' : 'text-yellow-500'}`}>
+                        PDF {!isPremium && '(Premium)'}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
