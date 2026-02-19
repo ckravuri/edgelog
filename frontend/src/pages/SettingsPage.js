@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { User, Bell, Shield, LogOut, ChevronRight, Clock, Trash2, FileText } from "lucide-react";
+import { User, Bell, Shield, LogOut, ChevronRight, Clock, FileText, Crown, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 
@@ -12,6 +12,7 @@ export default function SettingsPage({ user }) {
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState('20:00');
   const [loading, setLoading] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
 
   useEffect(() => {
     // Load current settings
@@ -32,7 +33,22 @@ export default function SettingsPage({ user }) {
         console.error('Error loading reminders:', error);
       }
     };
+    
+    // Load subscription status
+    const loadSubscription = async () => {
+      try {
+        const response = await fetch(`${API}/subscription/status`, { credentials: 'include' });
+        if (response.ok) {
+          const data = await response.json();
+          setSubscriptionStatus(data);
+        }
+      } catch (error) {
+        console.error('Error loading subscription:', error);
+      }
+    };
+    
     loadReminders();
+    loadSubscription();
   }, [user]);
 
   const handleMaxTradesChange = async (value) => {
