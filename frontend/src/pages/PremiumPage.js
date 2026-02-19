@@ -253,6 +253,37 @@ export default function PremiumPage() {
         </div>
       </div>
 
+      {/* Coupon Code */}
+      <div className="mb-6">
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              type="text"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+              placeholder="Enter coupon code"
+              className="w-full pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-green-500"
+              data-testid="coupon-input"
+            />
+          </div>
+          <button
+            onClick={handleApplyCoupon}
+            disabled={couponLoading || !couponCode.trim()}
+            className="px-4 py-3 bg-zinc-800 text-white font-medium rounded-lg hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid="apply-coupon-btn"
+          >
+            {couponLoading ? '...' : 'Apply'}
+          </button>
+        </div>
+        {appliedCoupon && (
+          <div className="mt-2 flex items-center gap-2 text-green-400 text-sm">
+            <Check size={16} />
+            <span>{appliedCoupon.message}</span>
+          </div>
+        )}
+      </div>
+
       {/* Error Message */}
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4 text-red-400 text-sm text-center">
@@ -267,7 +298,7 @@ export default function PremiumPage() {
         className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-black font-bold rounded-xl transition-all hover:opacity-90 disabled:opacity-50"
         data-testid="subscribe-btn"
       >
-        {loading ? 'Processing...' : `Subscribe for $${selectedPlan === 'yearly' ? '49.99/year' : '5.99/month'}`}
+        {loading ? 'Processing...' : `Subscribe for $${selectedPlan === 'yearly' ? '49.99/year' : '5.99/month'}${appliedCoupon?.discount_type === 'percentage' ? ` (${appliedCoupon.discount_value}% off)` : ''}`}
       </button>
 
       <p className="text-xs text-zinc-500 text-center mt-4">
