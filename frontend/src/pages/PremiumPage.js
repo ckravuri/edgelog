@@ -358,6 +358,28 @@ export default function PremiumPage() {
       <p className="text-xs text-zinc-500 text-center mt-4">
         Cancel anytime. Subscription renews automatically.
       </p>
+
+      {/* Restore Purchases */}
+      <button
+        onClick={handleRestorePurchases}
+        disabled={loading}
+        className="w-full mt-4 py-3 flex items-center justify-center gap-2 text-zinc-400 hover:text-white transition-colors"
+        data-testid="restore-purchases-btn"
+      >
+        <RefreshCw size={16} />
+        <span className="text-sm">Restore Previous Purchases</span>
+      </button>
+
+      {/* Terms */}
+      <p className="text-xs text-zinc-600 text-center mt-6">
+        By subscribing, you agree to our{' '}
+        <a href="/terms" className="text-zinc-400 underline">Terms of Service</a>
+        {' '}and{' '}
+        <a href="/privacy" className="text-zinc-400 underline">Privacy Policy</a>.
+        <br />
+        Subscriptions auto-renew unless cancelled 24 hours before the end of the current period.
+        No refunds for partial billing periods.
+      </p>
     </div>
   );
 }
