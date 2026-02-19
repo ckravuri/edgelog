@@ -130,6 +130,34 @@ export default function PremiumPage() {
     }
   };
 
+  const handleRestorePurchases = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const platform = Capacitor.getPlatform();
+      
+      if (platform === 'ios' || platform === 'android') {
+        const { Purchases } = await import('@revenuecat/purchases-capacitor');
+        const { customerInfo } = await Purchases.restorePurchases();
+        
+        if (customerInfo.entitlements.active['premium']) {
+          toast.success('Purchases restored successfully!');
+          await fetchSubscriptionStatus();
+        } else {
+          toast.info('No previous purchases found.');
+        }
+      } else {
+        setError('Restore purchases is only available on mobile devices.');
+      }
+    } catch (err) {
+      console.error('Restore error:', err);
+      setError('Failed to restore purchases. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const features = [
     { icon: X, text: 'No Ads', free: false, premium: true },
     { icon: Brain, text: 'Unlimited AI Reports', free: '1/week', premium: true },
@@ -139,7 +167,11 @@ export default function PremiumPage() {
     { icon: Zap, text: 'Share via WhatsApp/Email', free: false, premium: true },
   ];
 
+  // Show premium status if already premium
   if (subscriptionStatus?.is_premium) {
+    const isTrial = subscriptionStatus.is_trial;
+    const daysLeft = subscriptionStatus.trial_days_left;
+    
     return (
       <div className="min-h-screen bg-black text-white p-4">
         <button 
@@ -151,13 +183,22 @@ export default function PremiumPage() {
         </button>
 
         <div className="text-center py-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/20 mb-4">
-            <Crown className="w-10 h-10 text-green-500" />
+          <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
+            isTrial ? 'bg-yellow-500/20' : 'bg-green-500/20'
+          }`}>
+            <Crown className={`w-10 h-10 ${isTrial ? 'text-yellow-500' : 'text-green-500'}`} />
           </div>
-          <h1 className="text-2xl font-bold mb-2">You're Premium!</h1>
-          <p className="text-zinc-400 mb-4">Enjoy all premium features</p>
+          <h1 className="text-2xl font-bold mb-2">
+            {isTrial ? 'Free Trial Active!' : "You're Premium!"}
+          </h1>
+          <p className="text-zinc-400 mb-4">
+            {isTrial 
+              ? `You have ${daysLeft} days left in your free trial`
+              : 'Enjoy all premium features'}
+          </p>
           <p className="text-sm text-zinc-500">
-            Expires: {subscriptionStatus.expires_at 
+            {isTrial ? 'Trial expires: ' : 'Subscription expires: '}
+            {subscriptionStatus.expires_at 
               ? new Date(subscriptionStatus.expires_at).toLocaleDateString() 
               : 'Never'}
           </p>
