@@ -386,9 +386,10 @@ async def apple_sign_in(request: AppleSignInRequest, response: Response):
                 {"$set": update_data}
             )
         else:
-            # Create new user
+            # Create new user with 7-day free trial!
             user_id = f"user_{uuid.uuid4().hex[:12]}"
             name = request.name or email.split('@')[0] if email else "Apple User"
+            trial_expires = datetime.now(timezone.utc) + timedelta(days=7)
             new_user = {
                 "user_id": user_id,
                 "apple_user_id": apple_user_id,
@@ -396,9 +397,15 @@ async def apple_sign_in(request: AppleSignInRequest, response: Response):
                 "name": name,
                 "picture": None,
                 "created_at": datetime.now(timezone.utc).isoformat(),
-                "max_trades_per_day": 5
+                "max_trades_per_day": 5,
+                # 7-day free trial
+                "subscription_tier": "premium",
+                "subscription_expires_at": trial_expires.isoformat(),
+                "is_trial": True,
+                "trial_started_at": datetime.now(timezone.utc).isoformat()
             }
             await db.users.insert_one(new_user)
+            logger.info(f"New Apple user {user_id} registered with 7-day free trial")
         
         # Create session
         session_token = f"apple_session_{uuid.uuid4().hex}"
