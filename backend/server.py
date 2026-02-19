@@ -1007,6 +1007,201 @@ async def get_subscription_status(user: User = Depends(get_current_user)):
         }
     }
 
+# ==================== COUPON CODES ====================
+
+class CouponCode(BaseModel):
+    code: str
+    discount_type: str = "percentage"  # "percentage" or "free_days"
+    discount_value: int = 0  # percentage off or free days
+    max_uses: Optional[int] = None
+    expires_at: Optional[str] = None
+    is_active: bool = True
+
+class ApplyCouponRequest(BaseModel):
+    code: str
+
+@api_router.post("/coupons/validate")
+async def validate_coupon(
+    request: ApplyCouponRequest,
+    user: User = Depends(get_current_user)
+):
+    """Validate a coupon code"""
+    code = request.code.strip().upper()
+    
+    coupon = await db.coupons.find_one({"code": code}, {"_id": 0})
+    
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Invalid coupon code")
+    
+    if not coupon.get("is_active", True):
+        raise HTTPException(status_code=400, detail="This coupon is no longer active")
+    
+    # Check expiration
+    expires_at = coupon.get("expires_at")
+    if expires_at:
+        if isinstance(expires_at, str):
+            expires_at = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        if expires_at < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="This coupon has expired")
+    
+    # Check max uses
+    max_uses = coupon.get("max_uses")
+    current_uses = coupon.get("current_uses", 0)
+    if max_uses and current_uses >= max_uses:
+        raise HTTPException(status_code=400, detail="This coupon has reached its usage limit")
+    
+    # Check if user already used this coupon
+    user_coupons = await db.user_coupons.find_one({
+        "user_id": user.user_id,
+        "coupon_code": code
+    })
+    if user_coupons:
+        raise HTTPException(status_code=400, detail="You have already used this coupon")
+    
+    return {
+        "valid": True,
+        "code": code,
+        "discount_type": coupon.get("discount_type", "percentage"),
+        "discount_value": coupon.get("discount_value", 0),
+        "description": coupon.get("description", "")
+    }
+
+@api_router.post("/coupons/apply")
+async def apply_coupon(
+    request: ApplyCouponRequest,
+    user: User = Depends(get_current_user)
+):
+    """Apply a coupon code to user account"""
+    code = request.code.strip().upper()
+    
+    # Validate first
+    coupon = await db.coupons.find_one({"code": code}, {"_id": 0})
+    
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Invalid coupon code")
+    
+    if not coupon.get("is_active", True):
+        raise HTTPException(status_code=400, detail="This coupon is no longer active")
+    
+    # Check if user already used this coupon
+    user_coupons = await db.user_coupons.find_one({
+        "user_id": user.user_id,
+        "coupon_code": code
+    })
+    if user_coupons:
+        raise HTTPException(status_code=400, detail="You have already used this coupon")
+    
+    discount_type = coupon.get("discount_type", "percentage")
+    discount_value = coupon.get("discount_value", 0)
+    
+    # Apply the coupon
+    if discount_type == "free_days":
+        # Give free premium days
+        current_expires = None
+        user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+        if user_doc:
+            current_expires = user_doc.get("subscription_expires_at")
+        
+        if current_expires:
+            if isinstance(current_expires, str):
+                base_date = datetime.fromisoformat(current_expires.replace("Z", "+00:00"))
+            else:
+                base_date = current_expires
+        else:
+            base_date = datetime.now(timezone.utc)
+        
+        new_expires = base_date + timedelta(days=discount_value)
+        
+        await db.users.update_one(
+            {"user_id": user.user_id},
+            {"$set": {
+                "subscription_tier": "premium",
+                "subscription_expires_at": new_expires.isoformat(),
+                "coupon_applied": code
+            }}
+        )
+        
+        message = f"You got {discount_value} days of free Premium!"
+        
+    elif discount_type == "percentage":
+        # Store the discount for checkout (RevenueCat handles actual discount)
+        await db.users.update_one(
+            {"user_id": user.user_id},
+            {"$set": {
+                "pending_discount": discount_value,
+                "pending_coupon": code
+            }}
+        )
+        message = f"You got {discount_value}% off your subscription!"
+    
+    # Record coupon usage
+    await db.user_coupons.insert_one({
+        "user_id": user.user_id,
+        "coupon_code": code,
+        "applied_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Increment coupon usage count
+    await db.coupons.update_one(
+        {"code": code},
+        {"$inc": {"current_uses": 1}}
+    )
+    
+    return {
+        "success": True,
+        "message": message,
+        "discount_type": discount_type,
+        "discount_value": discount_value
+    }
+
+@api_router.post("/admin/coupons/create")
+async def create_coupon(
+    coupon: CouponCode,
+    user: User = Depends(get_current_user)
+):
+    """Create a new coupon code (admin only - check by email for now)"""
+    # Simple admin check - you can enhance this later
+    admin_emails = ["ravuri@gmail.com", "admin@edgelog.app"]  # Add your email
+    
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    if not user_doc or user_doc.get("email") not in admin_emails:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    code = coupon.code.strip().upper()
+    
+    # Check if code already exists
+    existing = await db.coupons.find_one({"code": code})
+    if existing:
+        raise HTTPException(status_code=400, detail="Coupon code already exists")
+    
+    coupon_doc = {
+        "code": code,
+        "discount_type": coupon.discount_type,
+        "discount_value": coupon.discount_value,
+        "max_uses": coupon.max_uses,
+        "current_uses": 0,
+        "expires_at": coupon.expires_at,
+        "is_active": coupon.is_active,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.coupons.insert_one(coupon_doc)
+    coupon_doc.pop("_id", None)
+    
+    return {"success": True, "coupon": coupon_doc}
+
+@api_router.get("/admin/coupons")
+async def list_coupons(user: User = Depends(get_current_user)):
+    """List all coupons (admin only)"""
+    admin_emails = ["ravuri@gmail.com", "admin@edgelog.app"]
+    
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    if not user_doc or user_doc.get("email") not in admin_emails:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    coupons = await db.coupons.find({}, {"_id": 0}).to_list(1000)
+    return {"coupons": coupons}
+
 @api_router.post("/subscription/webhook")
 async def subscription_webhook(request: Request):
     """Handle RevenueCat webhook for subscription updates"""
