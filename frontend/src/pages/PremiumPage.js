@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Crown, Check, X, Zap, Shield, Download, Brain, ChevronLeft } from 'lucide-react';
+import { Crown, Check, X, Zap, Shield, Download, Brain, ChevronLeft, Tag } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
+import { toast } from 'sonner';
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
@@ -11,6 +12,9 @@ export default function PremiumPage() {
   const [loading, setLoading] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [error, setError] = useState(null);
+  const [couponCode, setCouponCode] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   useEffect(() => {
     fetchSubscriptionStatus();
@@ -27,6 +31,57 @@ export default function PremiumPage() {
       }
     } catch (err) {
       console.error('Failed to fetch subscription status:', err);
+    }
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    
+    setCouponLoading(true);
+    setError(null);
+    
+    try {
+      // First validate
+      const validateResponse = await fetch(`${API}/coupons/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ code: couponCode.trim() })
+      });
+      
+      const validateData = await validateResponse.json();
+      
+      if (!validateResponse.ok) {
+        throw new Error(validateData.detail || 'Invalid coupon');
+      }
+      
+      // Then apply
+      const applyResponse = await fetch(`${API}/coupons/apply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ code: couponCode.trim() })
+      });
+      
+      const applyData = await applyResponse.json();
+      
+      if (!applyResponse.ok) {
+        throw new Error(applyData.detail || 'Failed to apply coupon');
+      }
+      
+      setAppliedCoupon(applyData);
+      toast.success(applyData.message);
+      
+      // Refresh subscription status if free days were given
+      if (applyData.discount_type === 'free_days') {
+        await fetchSubscriptionStatus();
+      }
+      
+    } catch (err) {
+      setError(err.message);
+      toast.error(err.message);
+    } finally {
+      setCouponLoading(false);
     }
   };
 
