@@ -92,41 +92,32 @@ export default function PremiumPage() {
     setError(null);
 
     try {
-      // Check if running on native platform
-      const platform = Capacitor.getPlatform();
-      
-      if (platform === 'ios' || platform === 'android') {
-        // Use RevenueCat for native purchases
-        // This will be implemented with RevenueCat SDK
-        const { Purchases } = await import('@revenuecat/purchases-capacitor');
+      if (isNative && monetizationReady) {
+        // Use monetization context for native purchases
+        const result = await purchase(selectedPlan);
         
-        // Get offerings
-        const offerings = await Purchases.getOfferings();
-        
-        if (offerings.current) {
-          const packageToPurchase = selectedPlan === 'yearly' 
-            ? offerings.current.annual 
-            : offerings.current.monthly;
-          
-          if (packageToPurchase) {
-            const { customerInfo } = await Purchases.purchasePackage({ aPackage: packageToPurchase });
-            
-            if (customerInfo.entitlements.active['premium']) {
-              // Refresh subscription status
-              await fetchSubscriptionStatus();
-              navigate('/settings');
-            }
-          }
+        if (result.success) {
+          toast.success('Welcome to Premium!');
+          await fetchSubscriptionStatus();
+          navigate('/settings');
+        } else if (result.cancelled) {
+          // User cancelled - no error message needed
+          console.log('Purchase cancelled by user');
+        } else {
+          setError(result.error || 'Failed to complete purchase. Please try again.');
         }
       } else {
         // Web - redirect to app stores
-        setError('Please download the mobile app to subscribe.');
+        const platform = Capacitor.getPlatform();
+        if (platform === 'web') {
+          setError('Please download the EdgeLog app from the App Store or Play Store to subscribe.');
+        } else {
+          setError('Subscription services are still loading. Please try again.');
+        }
       }
     } catch (err) {
       console.error('Purchase error:', err);
-      if (err.code !== 'PURCHASE_CANCELLED_ERROR') {
-        setError('Failed to complete purchase. Please try again.');
-      }
+      setError('Failed to complete purchase. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -137,17 +128,16 @@ export default function PremiumPage() {
     setError(null);
     
     try {
-      const platform = Capacitor.getPlatform();
-      
-      if (platform === 'ios' || platform === 'android') {
-        const { Purchases } = await import('@revenuecat/purchases-capacitor');
-        const { customerInfo } = await Purchases.restorePurchases();
+      if (isNative && monetizationReady) {
+        const result = await restore();
         
-        if (customerInfo.entitlements.active['premium']) {
+        if (result.success && result.isPremium) {
           toast.success('Purchases restored successfully!');
           await fetchSubscriptionStatus();
-        } else {
+        } else if (result.success && !result.hasEntitlements) {
           toast.info('No previous purchases found.');
+        } else {
+          setError(result.error || 'Failed to restore purchases.');
         }
       } else {
         setError('Restore purchases is only available on mobile devices.');
