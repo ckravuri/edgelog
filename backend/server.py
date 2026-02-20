@@ -1230,22 +1230,35 @@ async def list_coupons(user: User = Depends(get_current_user)):
     coupons = await db.coupons.find({}, {"_id": 0}).to_list(1000)
     return {"coupons": coupons}
 
+# RevenueCat Webhook Secret
+REVENUECAT_WEBHOOK_SECRET = os.getenv("REVENUECAT_WEBHOOK_SECRET", "")
+
 @api_router.post("/subscription/webhook")
 async def subscription_webhook(request: Request):
     """Handle RevenueCat webhook for subscription updates"""
     try:
+        # Validate webhook authorization
+        auth_header = request.headers.get("Authorization")
+        if REVENUECAT_WEBHOOK_SECRET and auth_header != f"Bearer {REVENUECAT_WEBHOOK_SECRET}":
+            logger.warning("Invalid webhook authorization")
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        
         body = await request.json()
-        event_type = body.get("event", {}).get("type")
-        app_user_id = body.get("event", {}).get("app_user_id")
+        event = body.get("event", {})
+        event_type = event.get("type")
+        app_user_id = event.get("app_user_id")
+        
+        logger.info(f"RevenueCat webhook received: {event_type} for user {app_user_id}")
         
         if not app_user_id:
             return {"status": "ignored", "reason": "no app_user_id"}
         
-        # Find user by RevenueCat ID or email
+        # Find user by RevenueCat ID, user_id, or email
         user = await db.users.find_one(
             {"$or": [
                 {"revenuecat_user_id": app_user_id},
-                {"user_id": app_user_id}
+                {"user_id": app_user_id},
+                {"email": app_user_id}
             ]},
             {"_id": 0}
         )
@@ -1254,9 +1267,9 @@ async def subscription_webhook(request: Request):
             logger.warning(f"User not found for RevenueCat ID: {app_user_id}")
             return {"status": "ignored", "reason": "user not found"}
         
-        if event_type in ["INITIAL_PURCHASE", "RENEWAL", "PRODUCT_CHANGE"]:
+        if event_type in ["INITIAL_PURCHASE", "RENEWAL", "PRODUCT_CHANGE", "UNCANCELLATION"]:
             # Activate premium
-            expiration = body.get("event", {}).get("expiration_at_ms")
+            expiration = event.get("expiration_at_ms")
             expires_at = datetime.fromtimestamp(expiration / 1000, tz=timezone.utc) if expiration else None
             
             await db.users.update_one(
@@ -1264,21 +1277,40 @@ async def subscription_webhook(request: Request):
                 {"$set": {
                     "subscription_tier": "premium",
                     "subscription_expires_at": expires_at.isoformat() if expires_at else None,
-                    "revenuecat_user_id": app_user_id
+                    "revenuecat_user_id": app_user_id,
+                    "is_trial": False
                 }}
             )
-            logger.info(f"Premium activated for user: {user['user_id']}")
+            logger.info(f"Premium activated for user: {user['user_id']} until {expires_at}")
             
-        elif event_type in ["CANCELLATION", "EXPIRATION"]:
-            # Downgrade to free
-            await db.users.update_one(
-                {"user_id": user["user_id"]},
-                {"$set": {"subscription_tier": "free"}}
-            )
-            logger.info(f"Premium cancelled for user: {user['user_id']}")
+        elif event_type in ["CANCELLATION", "EXPIRATION", "BILLING_ISSUE"]:
+            # Downgrade to free (but keep until expiration for CANCELLATION)
+            if event_type == "EXPIRATION":
+                await db.users.update_one(
+                    {"user_id": user["user_id"]},
+                    {"$set": {
+                        "subscription_tier": "free",
+                        "is_trial": False
+                    }}
+                )
+                logger.info(f"Premium expired for user: {user['user_id']}")
+            else:
+                # CANCELLATION - they keep access until expiration
+                logger.info(f"Subscription cancelled (but still active) for user: {user['user_id']}")
         
-        return {"status": "success"}
+        elif event_type == "SUBSCRIBER_ALIAS":
+            # User alias changed - update the RevenueCat ID
+            new_app_user_id = event.get("new_app_user_id")
+            if new_app_user_id:
+                await db.users.update_one(
+                    {"user_id": user["user_id"]},
+                    {"$set": {"revenuecat_user_id": new_app_user_id}}
+                )
         
+        return {"status": "success", "event_type": event_type}
+        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Webhook error: {e}")
         raise HTTPException(status_code=500, detail="Webhook processing failed")
