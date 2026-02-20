@@ -79,24 +79,41 @@ function AppRouter() {
 }
 
 function App() {
+  const [userId, setUserId] = useState(null);
+
+  // Get user ID from session storage for RevenueCat linking
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem('edgelog_user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setUserId(user.user_id);
+      } catch (e) {
+        console.warn('Failed to parse stored user');
+      }
+    }
+  }, []);
+
   return (
     <div className="app-container">
       {/* Noise texture overlay */}
       <div className="noise-overlay" />
       
-      <BrowserRouter>
-        <AppRouter />
-        <Toaster 
-          position="top-center" 
-          toastOptions={{
-            style: {
-              background: '#0A0A0A',
-              border: '1px solid rgba(255,255,255,0.1)',
-              color: '#FFFFFF',
-            },
-          }}
-        />
-      </BrowserRouter>
+      <MonetizationProvider userId={userId}>
+        <BrowserRouter>
+          <AppRouter />
+          <Toaster 
+            position="top-center" 
+            toastOptions={{
+              style: {
+                background: '#0A0A0A',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#FFFFFF',
+              },
+            }}
+          />
+        </BrowserRouter>
+      </MonetizationProvider>
     </div>
   );
 }
