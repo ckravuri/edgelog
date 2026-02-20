@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
+import { MonetizationProvider } from "@/context/MonetizationContext";
 
 // Pages
 import LoginPage from "@/pages/LoginPage";
