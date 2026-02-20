@@ -71,6 +71,7 @@ function AppRouter() {
         </ProtectedRoute>
       } />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
