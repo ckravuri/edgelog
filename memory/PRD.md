@@ -59,19 +59,24 @@ EdgeLog is a professional trading journal PWA designed for traders to track, ana
 
 ### Version 1.4 - Monetization & Premium Features (Feb 19, 2026)
 - [x] **Premium Subscription Model** - $5.99/month or $49.99/year
-- [x] **Subscription Status API** - Track premium status
+- [x] **7-Day Free Trial** - Auto-activated for new users
+- [x] **Subscription Status API** - Track premium/trial status
 - [x] **AI Report Limiting** - Free: 1/week, Premium: Unlimited
 - [x] **MT4/MT5 Import** - Parse HTML/CSV reports (Premium)
 - [x] **Export to CSV** - Download trade history (Premium)
+- [x] **PDF Report Download** - Professional PDF reports (Premium)
+- [x] **Coupon Code System** - Percentage off or free days
 - [x] **RevenueCat Webhook** - Handle subscription events
+- [x] **Restore Purchases** - Button to restore on new device
 - [x] Premium page with plan selection
 - [x] Import page for MT4/MT5 trades
-- [x] Updated Settings page with subscription status
+- [x] Terms of Service page
+- [x] Updated Settings page with trial/premium status
 
 ## Architecture
 ```
 Frontend (React PWA + Capacitor)
-├── Pages: Login, Home, AddTrade, Dashboard, Settings, Reports, History, Premium, Import
+├── Pages: Login, Home, AddTrade, Dashboard, Settings, Reports, History, Premium, Import, Terms
 ├── Components: BottomNav, TradeCard, DisciplineRing, CloseTradeModal, EditTradeModal
 ├── Native: Capacitor for iOS/Android with Sign in with Apple
 └── Styling: Tailwind CSS with custom dark theme
