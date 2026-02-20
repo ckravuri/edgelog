@@ -141,31 +141,41 @@ export default function SettingsPage({ user }) {
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                   subscriptionStatus?.is_premium 
-                    ? 'bg-gradient-to-br from-yellow-500/30 to-orange-500/30' 
+                    ? subscriptionStatus?.is_trial 
+                      ? 'bg-gradient-to-br from-blue-500/30 to-cyan-500/30'
+                      : 'bg-gradient-to-br from-yellow-500/30 to-orange-500/30' 
                     : 'bg-yellow-500/20'
                 }`}>
                   <Crown className={`w-5 h-5 ${
-                    subscriptionStatus?.is_premium ? 'text-yellow-400' : 'text-yellow-500'
+                    subscriptionStatus?.is_premium 
+                      ? subscriptionStatus?.is_trial ? 'text-blue-400' : 'text-yellow-400' 
+                      : 'text-yellow-500'
                   }`} />
                 </div>
                 <div>
                   <p className="font-semibold">
-                    {subscriptionStatus?.is_premium ? 'Premium' : 'Free Plan'}
+                    {subscriptionStatus?.is_premium 
+                      ? subscriptionStatus?.is_trial 
+                        ? 'Free Trial' 
+                        : 'Premium'
+                      : 'Free Plan'}
                   </p>
                   <p className="text-xs text-zinc-500">
                     {subscriptionStatus?.is_premium 
-                      ? `Expires: ${new Date(subscriptionStatus.expires_at).toLocaleDateString()}`
+                      ? subscriptionStatus?.is_trial
+                        ? `${subscriptionStatus.trial_days_left} days left in trial`
+                        : `Expires: ${new Date(subscriptionStatus.expires_at).toLocaleDateString()}`
                       : '14-day trade history'}
                   </p>
                 </div>
               </div>
-              {!subscriptionStatus?.is_premium && (
+              {(!subscriptionStatus?.is_premium || subscriptionStatus?.is_trial) && (
                 <button 
                   onClick={() => navigate('/premium')}
                   className="px-3 py-1.5 bg-gradient-to-r from-yellow-500 to-orange-500 text-black text-xs font-bold uppercase rounded hover:opacity-90 transition-opacity"
                   data-testid="upgrade-btn"
                 >
-                  Upgrade
+                  {subscriptionStatus?.is_trial ? 'Subscribe' : 'Upgrade'}
                 </button>
               )}
             </div>
