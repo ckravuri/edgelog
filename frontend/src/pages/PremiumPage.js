@@ -9,6 +9,7 @@ const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
 export default function PremiumPage() {
   const navigate = useNavigate();
+  const { isNative, purchase, restore, offerings, isInitialized: monetizationReady } = useMonetization();
   const [selectedPlan, setSelectedPlan] = useState('yearly');
   const [loading, setLoading] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
