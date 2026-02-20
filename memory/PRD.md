@@ -107,8 +107,8 @@ Database (MongoDB)
 | Apple Sign-In | iOS native auth | ✅ Implemented |
 | Cloudinary | Screenshot storage | ✅ Active |
 | GPT-5.2 | AI insights | ✅ Active |
-| RevenueCat | Subscriptions | ⏳ Setup Required |
-| Google AdMob | Ads | ⏳ Setup Required |
+| RevenueCat | Subscriptions | ✅ Integrated (iOS: appl_fkQLSsiDoBAFKVrZuCAWNWUuhVh, Android: goog_CoRsfTgnHXZjUYvcNgXosmzVArw) |
+| Google AdMob | Ads | ✅ Integrated (iOS App: ca-app-pub-8958093663498636~7989527556, Android App: ca-app-pub-8958093663498636~5932109432) |
 
 ## Monetization Model
 
@@ -117,7 +117,7 @@ Database (MongoDB)
 - Basic dashboard & analytics
 - 1 AI report per week
 - 14-day history retention
-- **Ads shown**
+- **Ads shown (Banner at bottom, interstitials at transitions)**
 
 ### Premium ($5.99/month or $49.99/year)
 - No ads
@@ -129,9 +129,9 @@ Database (MongoDB)
 
 ## Prioritized Backlog
 
-### P0 (In Progress)
-- [ ] AdMob integration (banner + interstitial ads)
-- [ ] RevenueCat integration (subscription handling)
+### P0 (Completed)
+- [x] AdMob integration (banner + interstitial ads)
+- [x] RevenueCat integration (subscription handling)
 - [ ] Complete Google Play Store submission (needs 12 testers for 14 days)
 
 ### P1 (High Priority)
@@ -162,6 +162,9 @@ Database (MongoDB)
 - Equity curve calculated as cumulative sum of daily P&L
 - Apple Sign-In: Bundle ID is com.ravuri.edgelog
 - Premium users bypass 14-day trade cleanup
+- AdMob Banner Ads: Show at bottom of screen for free users
+- AdMob Interstitial Ads: Show at natural break points (e.g., after closing a trade)
+- RevenueCat handles purchase flow and subscription management on native platforms
 
 ---
-Last Updated: February 19, 2026
+Last Updated: February 20, 2026
