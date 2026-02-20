@@ -15,6 +15,7 @@ import HistoryPage from "@/pages/HistoryPage";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 import PremiumPage from "@/pages/PremiumPage";
 import ImportPage from "@/pages/ImportPage";
+import TermsPage from "@/pages/TermsPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 function AppRouter() {
