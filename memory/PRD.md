@@ -57,7 +57,7 @@ EdgeLog is a professional trading journal PWA designed for traders to track, ana
 - [x] Store listing content (descriptions, screenshots)
 - [x] Privacy Policy page
 
-### Version 1.4 - Monetization & Premium Features (Feb 19, 2026)
+### Version 1.4 - Monetization & Premium Features (Feb 19-20, 2026)
 - [x] **Premium Subscription Model** - $5.99/month or $49.99/year
 - [x] **7-Day Free Trial** - Auto-activated for new users
 - [x] **Subscription Status API** - Track premium/trial status
@@ -66,7 +66,8 @@ EdgeLog is a professional trading journal PWA designed for traders to track, ana
 - [x] **Export to CSV** - Download trade history (Premium)
 - [x] **PDF Report Download** - Professional PDF reports (Premium)
 - [x] **Coupon Code System** - Percentage off or free days
-- [x] **RevenueCat Webhook** - Handle subscription events
+- [x] **RevenueCat Integration** - Handle subscription purchases (iOS/Android)
+- [x] **AdMob Integration** - Banner and interstitial ads for free users
 - [x] **Restore Purchases** - Button to restore on new device
 - [x] Premium page with plan selection
 - [x] Import page for MT4/MT5 trades
