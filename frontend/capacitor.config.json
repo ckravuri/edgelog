@@ -1,8 +1,10 @@
 {
-  "appId": "com.edgelog.app",
+  "appId": "com.ravuri.edgelog",
   "appName": "EdgeLog",
   "webDir": "build",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "url": "https://edgelog-staging-1.preview.emergentagent.com",
+    "cleartext": false
   }
 }
