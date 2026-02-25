@@ -26,11 +26,17 @@ export default function LoginPage() {
   const [isChecking, setIsChecking] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const authCheckRef = useRef(false);
 
   // Check if running on iOS native app
   const isIosNative = Capacitor.getPlatform() === 'ios';
+  const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
+    // Prevent multiple auth checks
+    if (authCheckRef.current) return;
+    authCheckRef.current = true;
+    
     // Check if already authenticated
     const checkAuth = async () => {
       try {
@@ -49,10 +55,28 @@ export default function LoginPage() {
     checkAuth();
   }, [navigate]);
 
-  const handleGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
     const redirectUrl = window.location.origin + '/';
-    window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+    const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+    
+    if (isNative) {
+      // Use in-app browser for native platforms (required by Apple)
+      try {
+        await Browser.open({ 
+          url: authUrl,
+          presentationStyle: 'popover',
+          windowName: '_self'
+        });
+      } catch (err) {
+        console.error('Browser open error:', err);
+        // Fallback to window.location
+        window.location.href = authUrl;
+      }
+    } else {
+      // Web - use normal redirect
+      window.location.href = authUrl;
+    }
   };
 
   const handleAppleLogin = async () => {
