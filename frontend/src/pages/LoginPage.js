@@ -196,6 +196,8 @@ export default function LoginPage() {
       <p className="text-xs text-zinc-600 mt-12 text-center animate-fadeIn" style={{ animationDelay: '0.4s' }}>
         By continuing, you agree to our{' '}
         <a href="/privacy" className="text-zinc-400 hover:text-white underline">Privacy Policy</a>
+        {' '}and{' '}
+        <a href="/terms" className="text-zinc-400 hover:text-white underline">Terms of Service</a>
       </p>
     </div>
   );
