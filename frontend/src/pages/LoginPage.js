@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20">
