@@ -58,7 +58,8 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    const redirectUrl = window.location.origin + '/';
+    // For native apps, use the backend URL as redirect since window.location.origin returns localhost
+    const redirectUrl = isNative ? BACKEND_URL + '/' : window.location.origin + '/';
     const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
     
     if (isNative) {
