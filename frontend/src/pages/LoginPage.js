@@ -57,20 +57,30 @@ export default function LoginPage() {
   }, [navigate]);
 
   const handleGoogleLogin = async () => {
-    // For native apps, we need a special flow since window.location.origin returns localhost
-    // Use the backend URL as the redirect, and after auth success, the user will land on the web app
-    // Then they can copy the session or we handle via deep link
+    setIsLoading(true);
+    setError(null);
     
     if (isNative) {
-      // For native: redirect to backend URL, which will handle the auth and show a "return to app" page
-      const redirectUrl = BACKEND_URL + '/';
+      // For native: Use a two-step process
+      // 1. Open auth in browser, which redirects to backend
+      // 2. Backend page exchanges session_id and stores it, then shows "return to app" page
+      // 3. When browser closes, we poll /auth/check-native to get the session
+      
+      // Generate a unique device token for this auth attempt
+      const deviceToken = Math.random().toString(36).substring(7) + Date.now();
+      sessionStorage.setItem('native_auth_device', deviceToken);
+      
+      // Redirect to backend which will handle the auth callback
+      const redirectUrl = BACKEND_URL + '/api/auth/native-callback';
       const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
       
       try {
-        // Add listener for browser finished (user closes browser manually or we close it)
-        Browser.addListener('browserFinished', () => {
+        // Add listener for browser finished
+        const listener = await Browser.addListener('browserFinished', async () => {
+          setIsLoading(true);
           // When browser closes, check if we're now authenticated
-          checkAuthAfterBrowserClose();
+          await pollForAuth();
+          listener.remove();
         });
         
         await Browser.open({ 
@@ -80,6 +90,7 @@ export default function LoginPage() {
       } catch (err) {
         console.error('Browser open error:', err);
         setError('Failed to open authentication');
+        setIsLoading(false);
       }
     } else {
       // Web - use normal redirect with current origin
@@ -89,18 +100,42 @@ export default function LoginPage() {
     }
   };
   
-  const checkAuthAfterBrowserClose = async () => {
-    // After browser closes, check if auth was successful by calling /auth/me
-    try {
-      const response = await fetch(`${API}/auth/me`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        navigate('/', { replace: true });
+  const pollForAuth = async () => {
+    // Poll the auth/me endpoint to check if auth was successful
+    // The in-app browser and native webview share cookies on iOS
+    // On Android, we need a different approach
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${API}/auth/me`, {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const userData = await response.json();
+          sessionStorage.setItem('edgelog_user', JSON.stringify(userData));
+          navigate('/', { replace: true });
+          return true;
+        }
+      } catch (error) {
+        console.log('Auth check failed, retrying...');
       }
-    } catch (error) {
-      console.log('Not authenticated yet');
+      return false;
+    };
+    
+    while (attempts < maxAttempts) {
+      const success = await checkAuth();
+      if (success) {
+        setIsLoading(false);
+        return;
+      }
+      attempts++;
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
+    
+    setIsLoading(false);
+    setError('Authentication timed out. Please try again.');
   };
 
   const handleAppleLogin = async () => {
