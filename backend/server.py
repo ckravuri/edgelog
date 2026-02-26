@@ -286,6 +286,103 @@ async def logout(request: Request, response: Response):
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}
 
+# ==================== NATIVE APP AUTH CALLBACK ====================
+from fastapi.responses import HTMLResponse
+
+@api_router.get("/auth/native-callback", response_class=HTMLResponse)
+async def native_auth_callback(request: Request, session_id: Optional[str] = None):
+    """
+    Callback page for native app authentication.
+    After Google auth completes, this page allows users to return to the app.
+    """
+    # Try to get session_id from query param or from hash (passed via JS)
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>EdgeLog - Sign In Complete</title>
+        <style>
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+            }}
+            .container {{
+                text-align: center;
+                padding: 40px;
+                max-width: 400px;
+            }}
+            .icon {{
+                width: 80px;
+                height: 80px;
+                margin: 0 auto 24px;
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }}
+            .icon svg {{
+                width: 40px;
+                height: 40px;
+                fill: white;
+            }}
+            h1 {{
+                font-size: 24px;
+                margin-bottom: 12px;
+            }}
+            p {{
+                color: #888;
+                margin-bottom: 32px;
+            }}
+            .btn {{
+                display: inline-block;
+                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+                color: white;
+                padding: 16px 32px;
+                border-radius: 12px;
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 16px;
+            }}
+            .note {{
+                margin-top: 24px;
+                font-size: 14px;
+                color: #666;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="icon">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </div>
+            <h1>Sign In Successful!</h1>
+            <p>You have successfully signed in to EdgeLog.</p>
+            <p style="margin-bottom: 16px;">Please close this browser window and return to the app.</p>
+            <button class="btn" onclick="window.close()">Close Window</button>
+            <p class="note">If the button doesn't work, please manually close this browser tab.</p>
+        </div>
+        <script>
+            // Try to automatically close after a short delay
+            setTimeout(function() {{
+                window.close();
+            }}, 3000);
+        </script>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+
+
+
 # ==================== APPLE SIGN-IN ====================
 
 class AppleSignInRequest(BaseModel):
