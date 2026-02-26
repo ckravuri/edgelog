@@ -290,19 +290,24 @@ async def logout(request: Request, response: Response):
 from fastapi.responses import HTMLResponse
 
 @api_router.get("/auth/native-callback", response_class=HTMLResponse)
-async def native_auth_callback(request: Request, session_id: Optional[str] = None):
+async def native_auth_callback(request: Request, response: Response):
     """
     Callback page for native app authentication.
-    After Google auth completes, this page allows users to return to the app.
+    This page receives the auth redirect, exchanges the session_id for a token,
+    sets the cookie, and shows a success page.
     """
-    # Try to get session_id from query param or from hash (passed via JS)
+    # The session_id comes in the URL hash, which we can't read server-side
+    # So we need to use JavaScript to read it and make an API call
+    
+    api_url = os.environ.get('REACT_APP_BACKEND_URL', '') or request.base_url.scheme + "://" + request.headers.get('host', '')
+    
     html_content = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>EdgeLog - Sign In Complete</title>
+        <title>EdgeLog - Completing Sign In...</title>
         <style>
             * {{ margin: 0; padding: 0; box-sizing: border-box; }}
             body {{
@@ -334,6 +339,17 @@ async def native_auth_callback(request: Request, session_id: Optional[str] = Non
                 height: 40px;
                 fill: white;
             }}
+            .spinner {{
+                width: 40px;
+                height: 40px;
+                border: 3px solid rgba(255,255,255,0.1);
+                border-top-color: #22c55e;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }}
+            @keyframes spin {{
+                to {{ transform: rotate(360deg); }}
+            }}
             h1 {{
                 font-size: 24px;
                 margin-bottom: 12px;
@@ -351,30 +367,111 @@ async def native_auth_callback(request: Request, session_id: Optional[str] = Non
                 text-decoration: none;
                 font-weight: 600;
                 font-size: 16px;
+                border: none;
+                cursor: pointer;
             }}
             .note {{
                 margin-top: 24px;
                 font-size: 14px;
                 color: #666;
             }}
+            .error {{
+                color: #ef4444;
+                margin-bottom: 16px;
+            }}
+            #loading {{ display: block; }}
+            #success {{ display: none; }}
+            #error-state {{ display: none; }}
         </style>
     </head>
     <body>
         <div class="container">
-            <div class="icon">
-                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            <div id="loading">
+                <div class="icon">
+                    <div class="spinner"></div>
+                </div>
+                <h1>Completing Sign In...</h1>
+                <p>Please wait while we authenticate you.</p>
             </div>
-            <h1>Sign In Successful!</h1>
-            <p>You have successfully signed in to EdgeLog.</p>
-            <p style="margin-bottom: 16px;">Please close this browser window and return to the app.</p>
-            <button class="btn" onclick="window.close()">Close Window</button>
-            <p class="note">If the button doesn't work, please manually close this browser tab.</p>
+            
+            <div id="success">
+                <div class="icon">
+                    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                </div>
+                <h1>Sign In Successful!</h1>
+                <p>You have successfully signed in to EdgeLog.</p>
+                <button class="btn" onclick="closeWindow()">Return to App</button>
+                <p class="note">Please close this window and return to the EdgeLog app.</p>
+            </div>
+            
+            <div id="error-state">
+                <div class="icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </div>
+                <h1>Sign In Failed</h1>
+                <p class="error" id="error-message">An error occurred during authentication.</p>
+                <button class="btn" onclick="closeWindow()">Close</button>
+            </div>
         </div>
+        
         <script>
-            // Try to automatically close after a short delay
-            setTimeout(function() {{
+            const API_URL = '{api_url}/api';
+            
+            async function processAuth() {{
+                try {{
+                    // Extract session_id from URL hash
+                    const hash = window.location.hash;
+                    const sessionIdMatch = hash.match(/session_id=([^&]+)/);
+                    
+                    if (!sessionIdMatch) {{
+                        throw new Error('No session ID found');
+                    }}
+                    
+                    const sessionId = sessionIdMatch[1];
+                    
+                    // Exchange session_id for session_token
+                    const response = await fetch(API_URL + '/auth/session', {{
+                        method: 'POST',
+                        headers: {{
+                            'Content-Type': 'application/json',
+                        }},
+                        credentials: 'include',
+                        body: JSON.stringify({{ session_id: sessionId }}),
+                    }});
+                    
+                    if (!response.ok) {{
+                        throw new Error('Authentication failed');
+                    }}
+                    
+                    const data = await response.json();
+                    
+                    // Show success state
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('success').style.display = 'block';
+                    
+                    // Try to close window after delay
+                    setTimeout(closeWindow, 2000);
+                    
+                }} catch (error) {{
+                    console.error('Auth error:', error);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error-state').style.display = 'block';
+                    document.getElementById('error-message').textContent = error.message;
+                }}
+            }}
+            
+            function closeWindow() {{
+                // Try multiple methods to close the window
                 window.close();
-            }}, 3000);
+                // If window.close doesn't work, try opener
+                if (window.opener) {{
+                    window.opener.focus();
+                    window.close();
+                }}
+            }}
+            
+            // Start processing on page load
+            processAuth();
         </script>
     </body>
     </html>
