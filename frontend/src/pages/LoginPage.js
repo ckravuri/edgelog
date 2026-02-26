@@ -57,27 +57,49 @@ export default function LoginPage() {
   }, [navigate]);
 
   const handleGoogleLogin = async () => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
-    // For native apps, use the backend URL as redirect since window.location.origin returns localhost
-    const redirectUrl = isNative ? BACKEND_URL + '/' : window.location.origin + '/';
-    const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+    // For native apps, we need a special flow since window.location.origin returns localhost
+    // Use the backend URL as the redirect, and after auth success, the user will land on the web app
+    // Then they can copy the session or we handle via deep link
     
     if (isNative) {
-      // Use in-app browser for native platforms (required by Apple)
+      // For native: redirect to backend URL, which will handle the auth and show a "return to app" page
+      const redirectUrl = BACKEND_URL + '/';
+      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+      
       try {
+        // Add listener for browser finished (user closes browser manually or we close it)
+        Browser.addListener('browserFinished', () => {
+          // When browser closes, check if we're now authenticated
+          checkAuthAfterBrowserClose();
+        });
+        
         await Browser.open({ 
           url: authUrl,
-          presentationStyle: 'popover',
-          windowName: '_self'
+          presentationStyle: 'popover'
         });
       } catch (err) {
         console.error('Browser open error:', err);
-        // Fallback to window.location
-        window.location.href = authUrl;
+        setError('Failed to open authentication');
       }
     } else {
-      // Web - use normal redirect
+      // Web - use normal redirect with current origin
+      const redirectUrl = window.location.origin + '/';
+      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
       window.location.href = authUrl;
+    }
+  };
+  
+  const checkAuthAfterBrowserClose = async () => {
+    // After browser closes, check if auth was successful by calling /auth/me
+    try {
+      const response = await fetch(`${API}/auth/me`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        navigate('/', { replace: true });
+      }
+    } catch (error) {
+      console.log('Not authenticated yet');
     }
   };
 
