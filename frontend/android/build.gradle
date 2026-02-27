@@ -29,6 +29,8 @@ allprojects {
             force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
             force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.10'
             force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.10'
+            // Force compatible browser version
+            force 'androidx.browser:browser:1.5.0'
         }
     }
 }
