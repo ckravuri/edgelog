@@ -84,6 +84,20 @@ function App() {
   const [userId, setUserId] = useState(null);
   const [deepLinkToken, setDeepLinkToken] = useState(null);
 
+  // Handle auth_token from URL (web-based fallback for Android)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const authToken = urlParams.get('auth_token');
+    if (authToken) {
+      console.log('Auth token received from URL');
+      // Store the token as cookie
+      document.cookie = `session_token=${authToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
+      // Clear the URL parameter and reload
+      window.history.replaceState({}, document.title, '/');
+      window.location.reload();
+    }
+  }, []);
+
   // Handle deep links for native auth callback
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -92,17 +106,21 @@ function App() {
         console.log('Deep link received:', event.url);
         
         // Parse the URL: edgelog://auth?token=xxx
-        const url = new URL(event.url);
-        if (url.host === 'auth' && url.searchParams.has('token')) {
-          const token = url.searchParams.get('token');
-          console.log('Auth token received from deep link');
-          
-          // Store the token and trigger auth
-          document.cookie = `session_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=none`;
-          setDeepLinkToken(token);
-          
-          // Force reload to pick up the new auth state
-          window.location.href = '/';
+        try {
+          const url = new URL(event.url);
+          if (url.host === 'auth' && url.searchParams.has('token')) {
+            const token = url.searchParams.get('token');
+            console.log('Auth token received from deep link');
+            
+            // Store the token and trigger auth
+            document.cookie = `session_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+            setDeepLinkToken(token);
+            
+            // Force reload to pick up the new auth state
+            window.location.href = '/';
+          }
+        } catch (e) {
+          console.error('Error parsing deep link:', e);
         }
       });
       
@@ -110,12 +128,16 @@ function App() {
       CapApp.getLaunchUrl().then((result) => {
         if (result && result.url) {
           console.log('App launched with URL:', result.url);
-          const url = new URL(result.url);
-          if (url.host === 'auth' && url.searchParams.has('token')) {
-            const token = url.searchParams.get('token');
-            document.cookie = `session_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=none`;
-            setDeepLinkToken(token);
-            window.location.href = '/';
+          try {
+            const url = new URL(result.url);
+            if (url.host === 'auth' && url.searchParams.has('token')) {
+              const token = url.searchParams.get('token');
+              document.cookie = `session_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+              setDeepLinkToken(token);
+              window.location.href = '/';
+            }
+          } catch (e) {
+            console.error('Error parsing launch URL:', e);
           }
         }
       });
