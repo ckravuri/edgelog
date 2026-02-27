@@ -101,7 +101,19 @@
                 const deepLink = 'edgelog://auth?token=' + encodeURIComponent(sessionToken);
                 document.getElementById('returnBtn').href = deepLink;
                 
-                // Try to auto-redirect to app
+                // Also create a web-based callback URL as fallback
+                const webCallback = 'https://edgelog-staging-2.preview.emergentagent.com/?auth_token=' + encodeURIComponent(sessionToken);
+                document.getElementById('returnBtn').onclick = function() {
+                    // Try deep link first
+                    window.location.href = deepLink;
+                    // If that fails, try web callback after delay
+                    setTimeout(function() {
+                        window.location.href = webCallback;
+                    }, 1000);
+                    return false;
+                };
+                
+                // Try to auto-redirect to app via deep link
                 setTimeout(function() {
                     window.location.href = deepLink;
                 }, 500);
