@@ -286,6 +286,41 @@ async def logout(request: Request, response: Response):
     response.delete_cookie(key="session_token", path="/")
     return {"message": "Logged out"}
 
+# ==================== NATIVE APP AUTH TOKEN STORAGE ====================
+# Temporary storage for native app auth tokens (expires after 5 minutes)
+native_auth_tokens = {}
+
+class NativeAuthRequest(BaseModel):
+    auth_request_id: str
+
+class NativeAuthStore(BaseModel):
+    auth_request_id: str
+    session_token: str
+
+@api_router.post("/auth/native/store")
+async def store_native_auth_token(data: NativeAuthStore):
+    """Store auth token for native app to retrieve"""
+    native_auth_tokens[data.auth_request_id] = {
+        "session_token": data.session_token,
+        "expires": time.time() + 300  # 5 minutes
+    }
+    return {"success": True}
+
+@api_router.post("/auth/native/retrieve")
+async def retrieve_native_auth_token(data: NativeAuthRequest):
+    """Retrieve stored auth token for native app"""
+    token_data = native_auth_tokens.get(data.auth_request_id)
+    if not token_data:
+        raise HTTPException(status_code=404, detail="Auth request not found")
+    
+    if time.time() > token_data["expires"]:
+        del native_auth_tokens[data.auth_request_id]
+        raise HTTPException(status_code=410, detail="Auth request expired")
+    
+    # Clean up after retrieval
+    del native_auth_tokens[data.auth_request_id]
+    return {"session_token": token_data["session_token"]}
+
 # ==================== NATIVE APP AUTH CALLBACK ====================
 from fastapi.responses import HTMLResponse
 
