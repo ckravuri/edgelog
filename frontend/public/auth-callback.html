@@ -15,66 +15,32 @@
             justify-content: center;
             color: white;
         }
-        .container {
-            text-align: center;
-            padding: 40px;
-            max-width: 400px;
-        }
+        .container { text-align: center; padding: 40px; max-width: 400px; }
         .icon {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 24px;
+            width: 80px; height: 80px; margin: 0 auto 24px;
             background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
         }
-        .icon svg {
-            width: 40px;
-            height: 40px;
-            fill: white;
-        }
+        .icon svg { width: 40px; height: 40px; fill: white; }
         .spinner {
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             border: 3px solid rgba(255,255,255,0.1);
             border-top-color: #22c55e;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        h1 {
-            font-size: 24px;
-            margin-bottom: 12px;
-        }
-        p {
-            color: #888;
-            margin-bottom: 32px;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        h1 { font-size: 24px; margin-bottom: 12px; }
+        p { color: #888; margin-bottom: 32px; }
         .btn {
             display: inline-block;
             background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            color: white;
-            padding: 16px 32px;
-            border-radius: 12px;
+            color: white; padding: 16px 32px; border-radius: 12px;
+            font-weight: 600; font-size: 16px; border: none; cursor: pointer;
             text-decoration: none;
-            font-weight: 600;
-            font-size: 16px;
-            border: none;
-            cursor: pointer;
         }
-        .note {
-            margin-top: 24px;
-            font-size: 14px;
-            color: #666;
-        }
-        .error {
-            color: #ef4444;
-            margin-bottom: 16px;
-        }
+        .note { margin-top: 24px; font-size: 14px; color: #666; }
+        .error { color: #ef4444; margin-bottom: 16px; }
         #loading { display: block; }
         #success { display: none; }
         #error-state { display: none; }
@@ -83,91 +49,70 @@
 <body>
     <div class="container">
         <div id="loading">
-            <div class="icon">
-                <div class="spinner"></div>
-            </div>
+            <div class="icon"><div class="spinner"></div></div>
             <h1>Completing Sign In...</h1>
             <p>Please wait while we authenticate you.</p>
         </div>
-        
         <div id="success">
             <div class="icon">
                 <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             </div>
             <h1>Sign In Successful!</h1>
-            <p>You can now close this window and return to the EdgeLog app.</p>
-            <button class="btn" onclick="closeWindow()">Close Window</button>
-            <p class="note">If the button doesn't work, please manually close this browser tab.</p>
+            <p>Tap the button below to return to EdgeLog.</p>
+            <a id="returnBtn" class="btn" href="#">Open EdgeLog</a>
+            <p class="note" style="margin-top: 16px;">If the app doesn't open, close this browser and reopen EdgeLog.</p>
         </div>
-        
         <div id="error-state">
             <div class="icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
                 <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </div>
             <h1>Sign In Failed</h1>
-            <p class="error" id="error-message">An error occurred during authentication.</p>
-            <button class="btn" onclick="closeWindow()">Close</button>
+            <p class="error" id="error-message">An error occurred.</p>
+            <button class="btn" onclick="window.close()">Close</button>
         </div>
     </div>
-    
     <script>
-        // Get API URL from current location
-        const API_URL = window.location.origin + '/api';
+        const API_URL = 'https://edgelog-staging-2.preview.emergentagent.com/api';
         
         async function processAuth() {
             try {
-                // Extract session_id from URL hash
                 const hash = window.location.hash;
                 const sessionIdMatch = hash.match(/session_id=([^&]+)/);
-                
-                if (!sessionIdMatch) {
-                    throw new Error('No session ID found. Please try again.');
-                }
-                
+                if (!sessionIdMatch) throw new Error('No session ID found.');
                 const sessionId = sessionIdMatch[1];
                 
-                // Exchange session_id for session_token
                 const response = await fetch(API_URL + '/auth/session', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify({ session_id: sessionId }),
                 });
                 
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.detail || 'Authentication failed');
-                }
+                if (!response.ok) throw new Error('Authentication failed');
                 
                 const data = await response.json();
-                console.log('Auth successful:', data);
+                const sessionToken = data.session_token;
                 
-                // Show success state
+                // Show success and set up deep link
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('success').style.display = 'block';
                 
-                // Try to close window after delay
-                setTimeout(closeWindow, 2000);
+                // Create deep link URL with token
+                const deepLink = 'edgelog://auth?token=' + encodeURIComponent(sessionToken);
+                document.getElementById('returnBtn').href = deepLink;
+                
+                // Try to auto-redirect to app
+                setTimeout(function() {
+                    window.location.href = deepLink;
+                }, 500);
                 
             } catch (error) {
-                console.error('Auth error:', error);
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('error-state').style.display = 'block';
                 document.getElementById('error-message').textContent = error.message;
             }
         }
         
-        function closeWindow() {
-            window.close();
-            // If window.close doesn't work, show message
-            setTimeout(function() {
-                document.querySelector('.note').textContent = 'Please close this browser tab manually and return to the app.';
-            }, 500);
-        }
-        
-        // Start processing on page load
         processAuth();
     </script>
 </body>
