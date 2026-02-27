@@ -102,13 +102,14 @@ export default function LoginPage() {
   
   const pollForAuth = async () => {
     // Poll the auth/me endpoint to check if auth was successful
-    // The in-app browser and native webview share cookies on iOS
-    // On Android, we need a different approach
+    // On Android, cookies don't share between browser and webview
+    // So we need to rely on the deep link or manual token passing
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 15;
     
     const checkAuth = async () => {
       try {
+        // First try checking with credentials
         const response = await fetch(`${API}/auth/me`, {
           credentials: 'include'
         });
@@ -119,7 +120,7 @@ export default function LoginPage() {
           return true;
         }
       } catch (error) {
-        console.log('Auth check failed, retrying...');
+        console.log('Auth check attempt', attempts + 1);
       }
       return false;
     };
@@ -131,11 +132,12 @@ export default function LoginPage() {
         return;
       }
       attempts++;
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
     }
     
     setIsLoading(false);
-    setError('Authentication timed out. Please try again.');
+    // Don't show error - just let user try again
+    // The deep link might still work
   };
 
   const handleAppleLogin = async () => {
