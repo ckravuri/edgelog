@@ -61,25 +61,20 @@ export default function LoginPage() {
     setError(null);
     
     if (isNative) {
-      // For native: Use a two-step process
-      // 1. Open auth in browser, which redirects to backend
-      // 2. Backend page exchanges session_id and stores it, then shows "return to app" page
-      // 3. When browser closes, we poll /auth/check-native to get the session
+      // Generate a unique auth request ID
+      const authRequestId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+      sessionStorage.setItem('native_auth_request_id', authRequestId);
       
-      // Generate a unique device token for this auth attempt
-      const deviceToken = Math.random().toString(36).substring(7) + Date.now();
-      sessionStorage.setItem('native_auth_device', deviceToken);
-      
-      // Redirect to static auth callback page (doesn't require React to load)
-      const redirectUrl = BACKEND_URL + '/auth-callback.html';
+      // Redirect to auth callback with auth_request_id
+      const redirectUrl = BACKEND_URL + '/auth-callback.html?auth_request_id=' + authRequestId;
       const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
       
       try {
         // Add listener for browser finished
         const listener = await Browser.addListener('browserFinished', async () => {
           setIsLoading(true);
-          // When browser closes, check if we're now authenticated
-          await pollForAuth();
+          // When browser closes, poll for the auth token
+          await pollForNativeAuth(authRequestId);
           listener.remove();
         });
         
@@ -100,44 +95,46 @@ export default function LoginPage() {
     }
   };
   
-  const pollForAuth = async () => {
-    // Poll the auth/me endpoint to check if auth was successful
-    // On Android, cookies don't share between browser and webview
-    // So we need to rely on the deep link or manual token passing
+  const pollForNativeAuth = async (authRequestId) => {
+    // Poll the server to retrieve the stored auth token
     let attempts = 0;
-    const maxAttempts = 15;
-    
-    const checkAuth = async () => {
-      try {
-        // First try checking with credentials
-        const response = await fetch(`${API}/auth/me`, {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const userData = await response.json();
-          sessionStorage.setItem('edgelog_user', JSON.stringify(userData));
-          navigate('/', { replace: true });
-          return true;
-        }
-      } catch (error) {
-        console.log('Auth check attempt', attempts + 1);
-      }
-      return false;
-    };
+    const maxAttempts = 20;
     
     while (attempts < maxAttempts) {
-      const success = await checkAuth();
-      if (success) {
-        setIsLoading(false);
-        return;
+      try {
+        const response = await fetch(`${API}/auth/native/retrieve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auth_request_id: authRequestId }),
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const sessionToken = data.session_token;
+          
+          // Store the token as cookie
+          document.cookie = `session_token=${sessionToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
+          
+          // Navigate to home
+          setIsLoading(false);
+          navigate('/', { replace: true });
+          return;
+        } else if (response.status === 404) {
+          // Token not stored yet, keep polling
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        } else {
+          // Other error
+          break;
+        }
+      } catch (error) {
+        console.log('Poll attempt', attempts + 1);
+        await new Promise(resolve => setTimeout(resolve, 1500));
       }
       attempts++;
-      await new Promise(resolve => setTimeout(resolve, 1500));
     }
     
     setIsLoading(false);
-    // Don't show error - just let user try again
-    // The deep link might still work
+    // Don't show error - the user might have cancelled
   };
 
   const handleAppleLogin = async () => {
