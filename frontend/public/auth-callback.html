@@ -74,6 +74,10 @@
     <script>
         const API_URL = 'https://edgelog-staging-2.preview.emergentagent.com/api';
         
+        // Get auth_request_id from URL if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const authRequestId = urlParams.get('auth_request_id');
+        
         async function processAuth() {
             try {
                 const hash = window.location.hash;
@@ -92,6 +96,18 @@
                 
                 const data = await response.json();
                 const sessionToken = data.session_token;
+                
+                // Store token on server for native app to retrieve
+                if (authRequestId) {
+                    await fetch(API_URL + '/auth/native/store', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            auth_request_id: authRequestId,
+                            session_token: sessionToken 
+                        }),
+                    });
+                }
                 
                 // Show success and set up deep link
                 document.getElementById('loading').style.display = 'none';
