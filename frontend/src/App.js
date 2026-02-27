@@ -3,6 +3,8 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { MonetizationProvider } from "@/context/MonetizationContext";
+import { Capacitor } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
 
 // Pages
 import LoginPage from "@/pages/LoginPage";
