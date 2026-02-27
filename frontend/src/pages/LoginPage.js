@@ -70,8 +70,8 @@ export default function LoginPage() {
       const deviceToken = Math.random().toString(36).substring(7) + Date.now();
       sessionStorage.setItem('native_auth_device', deviceToken);
       
-      // Redirect to backend root URL (must be whitelisted in Emergent auth)
-      const redirectUrl = BACKEND_URL + '/';
+      // Redirect to static auth callback page (doesn't require React to load)
+      const redirectUrl = BACKEND_URL + '/auth-callback.html';
       const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
       
       try {
