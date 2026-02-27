@@ -82,6 +82,45 @@ function AppRouter() {
 
 function App() {
   const [userId, setUserId] = useState(null);
+  const [deepLinkToken, setDeepLinkToken] = useState(null);
+
+  // Handle deep links for native auth callback
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      // Listen for app URL open events (deep links)
+      CapApp.addListener('appUrlOpen', async (event) => {
+        console.log('Deep link received:', event.url);
+        
+        // Parse the URL: edgelog://auth?token=xxx
+        const url = new URL(event.url);
+        if (url.host === 'auth' && url.searchParams.has('token')) {
+          const token = url.searchParams.get('token');
+          console.log('Auth token received from deep link');
+          
+          // Store the token and trigger auth
+          document.cookie = `session_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=none`;
+          setDeepLinkToken(token);
+          
+          // Force reload to pick up the new auth state
+          window.location.href = '/';
+        }
+      });
+      
+      // Check if app was opened with a URL
+      CapApp.getLaunchUrl().then((result) => {
+        if (result && result.url) {
+          console.log('App launched with URL:', result.url);
+          const url = new URL(result.url);
+          if (url.host === 'auth' && url.searchParams.has('token')) {
+            const token = url.searchParams.get('token');
+            document.cookie = `session_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=none`;
+            setDeepLinkToken(token);
+            window.location.href = '/';
+          }
+        }
+      });
+    }
+  }, []);
 
   // Get user ID from session storage for RevenueCat linking
   useEffect(() => {
