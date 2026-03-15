@@ -152,8 +152,13 @@ Database (MongoDB)
 ## App Store Status
 | Platform | Status | Notes |
 |----------|--------|-------|
-| iOS App Store | Waiting for Review | Build 5 submitted with Sign in with Apple |
+| iOS App Store | Rejected (Fixing) | Rejection reasons: Apple Sign-In bug, IAP promo image, EULA link |
 | Google Play | Internal Testing | Needs 12 testers for 14 days before Production |
+
+## iOS Rejection Fixes (March 15, 2026)
+- **Guideline 2.1 (Apple Sign-In Bug)**: Fixed `handleAppleLogin()` with better error handling and logging
+- **Guideline 2.3.2 (Promotional Image)**: Created new 1024x1024 image (not a screenshot)
+- **Guideline 3.1.2 (EULA Link)**: Created static `/terms.html` and `/privacy.html` pages
 
 ## Technical Notes
 - Backend URL: REACT_APP_BACKEND_URL from .env
@@ -168,4 +173,4 @@ Database (MongoDB)
 - RevenueCat handles purchase flow and subscription management on native platforms
 
 ---
-Last Updated: February 20, 2026
+Last Updated: March 15, 2026
