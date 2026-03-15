@@ -34,8 +34,9 @@ export default function LoginPage() {
   const isAndroidNative = Capacitor.getPlatform() === 'android';
   const isNative = Capacitor.isNativePlatform();
   
-  // Show Apple Sign-In on iOS native and web preview (not on Android)
-  const showAppleSignIn = !isAndroidNative;
+  // Apple Sign-In ONLY works on native iOS (not web, not Android)
+  // Web requires a separate Service ID configured in Apple Developer Console
+  const showAppleSignIn = isIosNative;
 
   useEffect(() => {
     // Prevent multiple auth checks
