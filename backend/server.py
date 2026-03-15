@@ -557,25 +557,47 @@ def verify_apple_identity_token(identity_token: str, apple_keys: dict) -> dict:
         # Convert JWK to RSA public key
         public_key = RSAAlgorithm.from_jwk(json.dumps(matching_key))
         
+        # First decode without audience verification to see what audience is in the token
+        try:
+            unverified_claims = jwt.decode(
+                identity_token,
+                public_key,
+                algorithms=['RS256'],
+                options={"verify_aud": False}
+            )
+            logger.info(f"Apple token audience (aud): {unverified_claims.get('aud')}")
+            logger.info(f"Apple token issuer (iss): {unverified_claims.get('iss')}")
+        except Exception as decode_err:
+            logger.warning(f"Could not decode token for logging: {decode_err}")
+        
         # Verify and decode the token
+        # For iOS native apps, the audience is the bundle ID
+        # The audience should match our app's bundle ID
         decoded_token = jwt.decode(
             identity_token,
             public_key,
             algorithms=['RS256'],
             audience=APPLE_APP_ID,
-            options={"verify_aud": True}
+            issuer="https://appleid.apple.com",
+            options={"verify_aud": True, "verify_iss": True}
         )
         
         return decoded_token
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Apple identity token has expired")
-    except jwt.InvalidAudienceError:
-        raise HTTPException(status_code=401, detail="Token audience does not match")
+        logger.error("Apple identity token has expired")
+        raise HTTPException(status_code=401, detail="Apple identity token has expired. Please try signing in again.")
+    except jwt.InvalidAudienceError as e:
+        logger.error(f"Apple token audience mismatch: {str(e)}")
+        raise HTTPException(status_code=401, detail="Token audience does not match. Please ensure you're using the correct app.")
+    except jwt.InvalidIssuerError as e:
+        logger.error(f"Apple token issuer mismatch: {str(e)}")
+        raise HTTPException(status_code=401, detail="Token issuer is invalid.")
     except jwt.InvalidSignatureError:
-        raise HTTPException(status_code=401, detail="Token signature verification failed")
+        logger.error("Apple token signature verification failed")
+        raise HTTPException(status_code=401, detail="Token signature verification failed. Please try again.")
     except Exception as e:
         logger.error(f"Apple token verification failed: {str(e)}")
-        raise HTTPException(status_code=401, detail="Failed to verify Apple identity token")
+        raise HTTPException(status_code=401, detail=f"Failed to verify Apple identity token: {str(e)}")
 
 @api_router.post("/auth/apple")
 async def apple_sign_in(request: AppleSignInRequest, response: Response):

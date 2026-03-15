@@ -145,17 +145,22 @@ export default function LoginPage() {
       // Dynamically import the plugin only on iOS
       const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
       
+      // For native iOS apps, we don't need redirectURI or clientId
+      // The native Sign in with Apple uses the app's bundle ID automatically
       const options = {
         clientId: 'com.ravuri.edgelog',
-        redirectURI: window.location.origin,
+        redirectURI: 'https://trade-journal-test.preview.emergentagent.com',
         scopes: 'email name',
         state: Math.random().toString(36).substring(7),
         nonce: Math.random().toString(36).substring(7),
       };
 
+      console.log('Starting Apple Sign-In with options:', options);
       const result = await SignInWithApple.authorize(options);
+      console.log('Apple Sign-In result:', JSON.stringify(result));
       
       if (result.response && result.response.identityToken) {
+        console.log('Got identity token, sending to backend...');
         // Send token to backend for verification
         const backendResponse = await fetch(`${API}/auth/apple`, {
           method: 'POST',
@@ -173,19 +178,42 @@ export default function LoginPage() {
           }),
         });
 
+        console.log('Backend response status:', backendResponse.status);
+        
         if (!backendResponse.ok) {
           const errorData = await backendResponse.json();
+          console.error('Backend error:', errorData);
           throw new Error(errorData.detail || 'Authentication failed');
         }
 
+        const responseData = await backendResponse.json();
+        console.log('Auth successful, navigating to home');
+        
+        // Store the session token for native platforms
+        if (responseData.session_token) {
+          document.cookie = `session_token=${responseData.session_token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+        }
+        
         // Success - navigate to home
         navigate('/', { replace: true });
       } else {
+        console.error('No identity token in result:', result);
         throw new Error('Failed to get identity token from Apple');
       }
     } catch (err) {
       console.error('Apple Sign-In error:', err);
-      setError(err.message || 'Apple Sign-In failed. Please try again.');
+      // Provide more specific error messages
+      let errorMessage = 'Apple Sign-In failed. Please try again.';
+      if (err.message) {
+        if (err.message.includes('canceled') || err.message.includes('cancelled')) {
+          errorMessage = 'Sign-in was cancelled.';
+        } else if (err.message.includes('network')) {
+          errorMessage = 'Network error. Please check your connection.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

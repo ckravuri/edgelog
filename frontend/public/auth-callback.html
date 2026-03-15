@@ -72,7 +72,7 @@
         </div>
     </div>
     <script>
-        const API_URL = 'https://edgelog-staging-2.preview.emergentagent.com/api';
+        const API_URL = 'https://trade-journal-test.preview.emergentagent.com/api';
         
         // Get auth_request_id from URL if present
         const urlParams = new URLSearchParams(window.location.search);
@@ -118,7 +118,7 @@
                 document.getElementById('returnBtn').href = deepLink;
                 
                 // Also create a web-based callback URL as fallback
-                const webCallback = 'https://edgelog-staging-2.preview.emergentagent.com/?auth_token=' + encodeURIComponent(sessionToken);
+                const webCallback = 'https://trade-journal-test.preview.emergentagent.com/?auth_token=' + encodeURIComponent(sessionToken);
                 document.getElementById('returnBtn').onclick = function() {
                     // Try deep link first
                     window.location.href = deepLink;

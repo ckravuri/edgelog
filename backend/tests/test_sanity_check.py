@@ -91,7 +91,7 @@ class TestCORSHeaders:
     def test_cors_headers_present(self):
         """Test CORS headers are present in response"""
         response = requests.options(f"{BASE_URL}/api/health", headers={
-            "Origin": "https://edgelog-staging-2.preview.emergentagent.com",
+            "Origin": "https://trade-journal-test.preview.emergentagent.com",
             "Access-Control-Request-Method": "GET"
         })
         # OPTIONS should return 200 or response has CORS headers
