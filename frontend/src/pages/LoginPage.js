@@ -29,9 +29,13 @@ export default function LoginPage() {
   const [error, setError] = useState(null);
   const authCheckRef = useRef(false);
 
-  // Check if running on iOS native app
+  // Check platform
   const isIosNative = Capacitor.getPlatform() === 'ios';
+  const isAndroidNative = Capacitor.getPlatform() === 'android';
   const isNative = Capacitor.isNativePlatform();
+  
+  // Show Apple Sign-In on iOS native and web preview (not on Android)
+  const showAppleSignIn = !isAndroidNative;
 
   useEffect(() => {
     // Prevent multiple auth checks
@@ -264,8 +268,8 @@ export default function LoginPage() {
           Continue with Google
         </button>
         
-        {/* Show Apple Sign-In only on iOS */}
-        {isIosNative && (
+        {/* Show Apple Sign-In on iOS and web preview (not on Android) */}
+        {showAppleSignIn && (
           <button 
             className="auth-btn bg-black text-white border border-white/20 hover:bg-zinc-900" 
             onClick={handleAppleLogin}
