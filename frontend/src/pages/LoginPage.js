@@ -150,19 +150,15 @@ export default function LoginPage() {
       // Dynamically import the plugin only on iOS
       const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
       
-      // For native iOS apps, we don't need redirectURI or clientId
-      // The native Sign in with Apple uses the app's bundle ID automatically
+      // For native iOS apps - minimal options, iOS handles the rest automatically
+      // Do NOT include clientId or redirectURI for native iOS - it uses bundle ID automatically
       const options = {
-        clientId: 'com.ravuri.edgelog',
-        redirectURI: 'https://trade-journal-test.preview.emergentagent.com',
         scopes: 'email name',
-        state: Math.random().toString(36).substring(7),
-        nonce: Math.random().toString(36).substring(7),
       };
 
-      console.log('Starting Apple Sign-In with options:', options);
+      console.log('Starting Apple Sign-In with native options');
       const result = await SignInWithApple.authorize(options);
-      console.log('Apple Sign-In result:', JSON.stringify(result));
+      console.log('Apple Sign-In result received');
       
       if (result.response && result.response.identityToken) {
         console.log('Got identity token, sending to backend...');
