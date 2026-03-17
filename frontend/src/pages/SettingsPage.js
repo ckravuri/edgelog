@@ -221,22 +221,56 @@ export default function SettingsPage({ user }) {
             <button
               onClick={async () => {
                 if (!subscriptionStatus?.is_premium) {
+                  toast.error('Export is a Premium feature');
                   navigate('/premium');
                   return;
                 }
+                
+                toast.loading('Preparing export...');
+                
                 try {
                   const response = await authFetch('/export/trades?format=csv');
-                  if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'edgelog_trades.csv';
-                    a.click();
-                    toast.success('Trades exported successfully!');
+                  
+                  if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Export failed');
                   }
+                  
+                  const blob = await response.blob();
+                  const filename = `edgelog_trades_${new Date().toISOString().slice(0,10)}.csv`;
+                  
+                  // Check if Web Share API is available (works on iOS Safari)
+                  if (navigator.share && navigator.canShare) {
+                    const file = new File([blob], filename, { type: 'text/csv' });
+                    
+                    if (navigator.canShare({ files: [file] })) {
+                      await navigator.share({
+                        title: 'EdgeLog Trades Export',
+                        files: [file]
+                      });
+                      toast.dismiss();
+                      toast.success('Export ready!');
+                      return;
+                    }
+                  }
+                  
+                  // Fallback: Create download link
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = filename;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  window.URL.revokeObjectURL(url);
+                  
+                  toast.dismiss();
+                  toast.success('Trades exported successfully!');
+                  
                 } catch (error) {
-                  toast.error('Failed to export trades');
+                  console.error('Export error:', error);
+                  toast.dismiss();
+                  toast.error(error.message || 'Failed to export trades');
                 }
               }}
               className="w-full stat-card flex items-center justify-between hover:bg-white/5 transition-colors"

@@ -93,7 +93,7 @@ export default function PremiumPage() {
     setError(null);
 
     try {
-      if (isNative && monetizationReady) {
+      if (isNative && monetizationReady && offerings) {
         // Use monetization context for native purchases
         const result = await purchase(selectedPlan);
         
@@ -107,13 +107,16 @@ export default function PremiumPage() {
         } else {
           setError(result.error || 'Failed to complete purchase. Please try again.');
         }
+      } else if (isNative && monetizationReady && !offerings) {
+        // RevenueCat initialized but offerings not loaded
+        setError('Subscription plans are temporarily unavailable. Please try again later or use a coupon code below.');
       } else {
         // Web - redirect to app stores
         const platform = Capacitor.getPlatform();
         if (platform === 'web') {
           setError('Please download the EdgeLog app from the App Store or Play Store to subscribe.');
         } else {
-          setError('Subscription services are still loading. Please try again.');
+          setError('Subscription services are still loading. Please wait a moment and try again.');
         }
       }
     } catch (err) {
