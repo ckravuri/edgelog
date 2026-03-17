@@ -32,13 +32,6 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         h1 { font-size: 24px; margin-bottom: 12px; }
         p { color: #888; margin-bottom: 32px; }
-        .btn {
-            display: inline-block;
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            color: white; padding: 16px 32px; border-radius: 12px;
-            font-weight: 600; font-size: 16px; border: none; cursor: pointer;
-            text-decoration: none;
-        }
         .note { margin-top: 24px; font-size: 14px; color: #666; }
         .error { color: #ef4444; margin-bottom: 16px; }
         #loading { display: block; }
@@ -58,9 +51,8 @@
                 <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             </div>
             <h1>Sign In Successful!</h1>
-            <p>Tap the button below to return to EdgeLog.</p>
-            <a id="returnBtn" class="btn" href="#">Open EdgeLog</a>
-            <p class="note" style="margin-top: 16px;">If the app doesn't open, close this browser and reopen EdgeLog.</p>
+            <p>Returning to EdgeLog...</p>
+            <p class="note">This window will close automatically.<br>If it doesn't, you can close it manually.</p>
         </div>
         <div id="error-state">
             <div class="icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
@@ -68,7 +60,7 @@
             </div>
             <h1>Sign In Failed</h1>
             <p class="error" id="error-message">An error occurred.</p>
-            <button class="btn" onclick="window.close()">Close</button>
+            <p class="note">Please close this window and try again.</p>
         </div>
     </div>
     <script>
@@ -109,30 +101,25 @@
                     });
                 }
                 
-                // Show success and set up deep link
+                // Show success message briefly
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('success').style.display = 'block';
                 
-                // Create deep link URL with token
-                const deepLink = 'edgelog://auth?token=' + encodeURIComponent(sessionToken);
-                document.getElementById('returnBtn').href = deepLink;
-                
-                // Also create a web-based callback URL as fallback
-                const webCallback = 'https://trade-journal-app-16.preview.emergentagent.com/?auth_token=' + encodeURIComponent(sessionToken);
-                document.getElementById('returnBtn').onclick = function() {
-                    // Try deep link first
-                    window.location.href = deepLink;
-                    // If that fails, try web callback after delay
-                    setTimeout(function() {
-                        window.location.href = webCallback;
-                    }, 1000);
-                    return false;
-                };
-                
-                // Try to auto-redirect to app via deep link
+                // Auto-close the browser after a short delay
+                // The native app is polling for the auth token, so it will pick it up
                 setTimeout(function() {
-                    window.location.href = deepLink;
-                }, 500);
+                    // Try to close the window/tab
+                    window.close();
+                    
+                    // For iOS in-app browser, try using webkit message handler
+                    if (window.webkit && window.webkit.messageHandlers) {
+                        try {
+                            window.webkit.messageHandlers.close.postMessage('close');
+                        } catch (e) {
+                            console.log('No webkit close handler');
+                        }
+                    }
+                }, 1500);
                 
             } catch (error) {
                 document.getElementById('loading').style.display = 'none';
