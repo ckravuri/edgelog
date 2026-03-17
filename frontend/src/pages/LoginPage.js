@@ -46,8 +46,13 @@ export default function LoginPage() {
     // Check if already authenticated
     const checkAuth = async () => {
       try {
+        // Get token from localStorage (for native) or rely on cookies (for web)
+        const token = localStorage.getItem('session_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        
         const response = await fetch(`${API}/auth/me`, {
-          credentials: 'include'
+          credentials: 'include',
+          headers: headers
         });
         if (response.ok) {
           navigate('/', { replace: true });
@@ -117,8 +122,8 @@ export default function LoginPage() {
           const data = await response.json();
           const sessionToken = data.session_token;
           
-          // Store the token as cookie
-          document.cookie = `session_token=${sessionToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
+          // Store the token in localStorage (works on native iOS)
+          localStorage.setItem('session_token', sessionToken);
           
           // Navigate to home
           setIsLoading(false);
@@ -200,11 +205,12 @@ export default function LoginPage() {
         }
 
         const responseData = await backendResponse.json();
-        console.log('Auth successful, navigating to home');
+        console.log('Auth successful, response:', responseData);
         
-        // Store the session token for native platforms
+        // Store the session token for native platforms using localStorage (cookies don't work on native)
         if (responseData.session_token) {
-          document.cookie = `session_token=${responseData.session_token}; path=/; max-age=${7 * 24 * 60 * 60}`;
+          localStorage.setItem('session_token', responseData.session_token);
+          console.log('Session token stored in localStorage');
         }
         
         // Success - navigate to home

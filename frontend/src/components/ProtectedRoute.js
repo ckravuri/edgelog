@@ -19,8 +19,13 @@ export default function ProtectedRoute({ children }) {
     
     const checkAuth = async () => {
       try {
+        // Get token from localStorage (for native iOS) or rely on cookies (for web)
+        const token = localStorage.getItem('session_token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        
         const response = await fetch(`${API}/auth/me`, {
-          credentials: 'include'
+          credentials: 'include',
+          headers: headers
         });
         
         if (!response.ok) {
