@@ -211,10 +211,13 @@ export default function LoginPage() {
         if (responseData.session_token) {
           localStorage.setItem('session_token', responseData.session_token);
           console.log('Session token stored in localStorage');
+          
+          // Small delay to ensure localStorage is persisted
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
         
-        // Success - navigate to home
-        navigate('/', { replace: true });
+        // Success - navigate to home with user data to skip re-auth check
+        navigate('/', { replace: true, state: { user: responseData.user } });
       } else {
         console.error('No identity token in result:', result);
         throw new Error('Failed to get identity token from Apple');
