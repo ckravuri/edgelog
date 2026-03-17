@@ -1,10 +1,5 @@
 /**
  * Monetization Context - Manages subscription and ad state across the app
- * 
- * Provides:
- * - RevenueCat subscription status
- * - AdMob banner/interstitial control
- * - Purchase flow helpers
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -20,67 +15,82 @@ export function MonetizationProvider({ children, userId }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [offerings, setOfferings] = useState(null);
   const [error, setError] = useState(null);
+  const [initAttempted, setInitAttempted] = useState(false);
 
-  // Initialize monetization services on native platforms
+  // Initialize monetization services
   useEffect(() => {
     const platform = Capacitor.getPlatform();
     const native = platform === 'ios' || platform === 'android';
     setIsNative(native);
 
     if (!native) {
+      console.log('Monetization: Web platform, skipping native init');
       setIsInitialized(true);
       return;
     }
 
     async function initialize() {
+      if (initAttempted) return;
+      setInitAttempted(true);
+      
+      console.log('Monetization: Starting initialization...');
+      
       try {
         // Initialize RevenueCat
         const rcResult = await RevenueCatService.initializeRevenueCat(userId);
-        console.log('RevenueCat init result:', rcResult);
+        console.log('Monetization: RevenueCat init result:', rcResult);
 
         if (rcResult.success) {
           // Get subscription status
           const status = await RevenueCatService.getSubscriptionStatus();
+          console.log('Monetization: Subscription status:', status);
           setIsPremium(status.isPremium);
 
-          // Get offerings
+          // Get offerings with retry
           try {
             const offeringsData = await RevenueCatService.getOfferings();
+            console.log('Monetization: Offerings loaded:', offeringsData?.hasOfferings);
             setOfferings(offeringsData);
           } catch (err) {
-            console.warn('Failed to load offerings:', err);
+            console.warn('Monetization: Failed to load offerings (will retry on purchase):', err.message);
+            // Don't fail initialization just because offerings didn't load
           }
+        } else {
+          console.warn('Monetization: RevenueCat init failed:', rcResult.error || rcResult.reason);
         }
 
-        // Initialize AdMob (for showing ads to free users)
-        const admobResult = await AdMobService.initializeAdMob();
-        console.log('AdMob init result:', admobResult);
+        // Initialize AdMob
+        try {
+          const admobResult = await AdMobService.initializeAdMob();
+          console.log('Monetization: AdMob init result:', admobResult);
+        } catch (err) {
+          console.warn('Monetization: AdMob init failed:', err.message);
+        }
 
         setIsInitialized(true);
+        console.log('Monetization: Initialization complete');
+        
       } catch (err) {
-        console.error('Monetization initialization error:', err);
+        console.error('Monetization: Initialization error:', err);
         setError(err.message);
-        setIsInitialized(true);
+        setIsInitialized(true); // Still mark as initialized so app can proceed
       }
     }
 
     initialize();
-  }, [userId]);
+  }, [userId, initAttempted]);
 
   // Show/hide banner based on premium status
   useEffect(() => {
     if (!isInitialized || !isNative) return;
 
     if (isPremium) {
-      // Premium user - hide ads
       AdMobService.removeBanner();
     } else {
-      // Free user - show banner
       AdMobService.showBanner();
     }
 
     return () => {
-      // Cleanup banner on unmount
       AdMobService.hideBanner();
     };
   }, [isPremium, isInitialized, isNative]);
@@ -91,39 +101,50 @@ export function MonetizationProvider({ children, userId }) {
       return { success: false, error: 'Purchases only available on mobile app' };
     }
 
-    if (!offerings) {
-      return { success: false, error: 'Offerings not loaded' };
+    console.log('Monetization: Starting purchase for:', planType);
+
+    // Try to load offerings if not already loaded
+    let currentOfferings = offerings;
+    if (!currentOfferings || !currentOfferings.hasOfferings) {
+      console.log('Monetization: Offerings not loaded, fetching now...');
+      try {
+        currentOfferings = await RevenueCatService.getOfferings();
+        setOfferings(currentOfferings);
+      } catch (err) {
+        console.error('Monetization: Failed to fetch offerings:', err);
+        return { success: false, error: 'Unable to load subscription options. Please try again.' };
+      }
+    }
+
+    if (!currentOfferings || !currentOfferings.hasOfferings) {
+      console.error('Monetization: No offerings available');
+      return { success: false, error: 'No subscription options available. Please try again later.' };
     }
 
     try {
-      const packageToPurchase = planType === 'yearly' 
-        ? offerings.annual?.rawPackage || offerings.raw?.current?.annual
-        : offerings.monthly?.rawPackage || offerings.raw?.current?.monthly;
-
-      if (!packageToPurchase) {
-        // Fallback to first available package
-        const allPackages = offerings.packages || offerings.raw?.current?.availablePackages || [];
-        const fallbackPackage = allPackages.find(p => 
-          p.identifier?.toLowerCase().includes(planType) || 
-          p.productId?.toLowerCase().includes(planType)
-        ) || allPackages[0];
-
-        if (!fallbackPackage) {
-          return { success: false, error: 'No subscription packages available' };
-        }
-
-        const result = await RevenueCatService.purchasePackage(
-          fallbackPackage.rawPackage || fallbackPackage
-        );
-
-        if (result.success) {
-          setIsPremium(true);
-          AdMobService.removeBanner();
-        }
-
-        return result;
+      // Find the right package
+      let packageToPurchase = null;
+      
+      if (planType === 'yearly' || planType === 'annual') {
+        packageToPurchase = currentOfferings.annual?.rawPackage;
+      } else {
+        packageToPurchase = currentOfferings.monthly?.rawPackage;
       }
 
+      // Fallback: search in packages array
+      if (!packageToPurchase && currentOfferings.packages) {
+        packageToPurchase = currentOfferings.packages.find(p => 
+          p.identifier?.toLowerCase().includes(planType) ||
+          p.productId?.toLowerCase().includes(planType)
+        )?.rawPackage;
+      }
+
+      if (!packageToPurchase) {
+        console.error('Monetization: Package not found for:', planType);
+        return { success: false, error: `${planType} plan not found. Please try again.` };
+      }
+
+      console.log('Monetization: Purchasing package:', packageToPurchase.identifier);
       const result = await RevenueCatService.purchasePackage(packageToPurchase);
 
       if (result.success) {
@@ -132,8 +153,9 @@ export function MonetizationProvider({ children, userId }) {
       }
 
       return result;
+      
     } catch (err) {
-      console.error('Purchase error:', err);
+      console.error('Monetization: Purchase error:', err);
       return { success: false, error: err.message };
     }
   }, [isNative, offerings]);
@@ -154,16 +176,14 @@ export function MonetizationProvider({ children, userId }) {
 
       return result;
     } catch (err) {
-      console.error('Restore error:', err);
+      console.error('Monetization: Restore error:', err);
       return { success: false, error: err.message };
     }
   }, [isNative]);
 
-  // Show interstitial ad (for free users at natural break points)
+  // Show interstitial ad
   const showInterstitial = useCallback(async () => {
-    if (!isNative || isPremium) {
-      return false;
-    }
+    if (!isNative || isPremium) return false;
     return AdMobService.showInterstitial();
   }, [isNative, isPremium]);
 
@@ -175,7 +195,21 @@ export function MonetizationProvider({ children, userId }) {
       const status = await RevenueCatService.getSubscriptionStatus();
       setIsPremium(status.isPremium);
     } catch (err) {
-      console.error('Failed to refresh status:', err);
+      console.error('Monetization: Failed to refresh status:', err);
+    }
+  }, [isNative]);
+
+  // Retry loading offerings
+  const retryLoadOfferings = useCallback(async () => {
+    if (!isNative) return null;
+    
+    try {
+      const offeringsData = await RevenueCatService.getOfferings();
+      setOfferings(offeringsData);
+      return offeringsData;
+    } catch (err) {
+      console.error('Monetization: Failed to reload offerings:', err);
+      return null;
     }
   }, [isNative]);
 
@@ -188,7 +222,8 @@ export function MonetizationProvider({ children, userId }) {
     purchase,
     restore,
     showInterstitial,
-    refreshStatus
+    refreshStatus,
+    retryLoadOfferings
   };
 
   return (

@@ -1,30 +1,43 @@
 /**
  * RevenueCat Service - Handles subscription management
  * 
- * API Keys:
- * - iOS: appl_fkQLSsiDoBAFKVrZuCAWNWUuhVh
- * - Android: goog_CoRsfTgnHXZjUYvcNgXosmzVArw
+ * Configuration:
+ * - iOS API Key: appl_fkQLSsiDoBAFKVrZuCAWNWUuhVh
+ * - Android API Key: goog_CoRsfTgnHXZjUYvcNgXosmzVArw
+ * - Entitlement ID: premium
+ * - Offering ID: default
+ * - Products: edgelog_premium_monthly, edgelog_premium_yearly
  */
 
 import { Capacitor } from '@capacitor/core';
 
-// API Keys for RevenueCat
-const REVENUECAT_API_KEY_IOS = 'appl_fkQLSsiDoBAFKVrZuCAWNWUuhVh';
-const REVENUECAT_API_KEY_ANDROID = 'goog_CoRsfTgnHXZjUYvcNgXosmzVArw';
+// RevenueCat Configuration
+const CONFIG = {
+  ios: {
+    apiKey: 'appl_fkQLSsiDoBAFKVrZuCAWNWUuhVh'
+  },
+  android: {
+    apiKey: 'goog_CoRsfTgnHXZjUYvcNgXosmzVArw'
+  },
+  entitlementId: 'premium',
+  offeringId: 'default',
+  products: {
+    monthly: 'edgelog_premium_monthly',
+    yearly: 'edgelog_premium_yearly'
+  }
+};
 
 let isInitialized = false;
 let Purchases = null;
 
 /**
  * Initialize RevenueCat SDK
- * Should be called once at app startup on native platforms
  */
 export async function initializeRevenueCat(userId = null) {
   const platform = Capacitor.getPlatform();
   
-  // Only initialize on native platforms
   if (platform !== 'ios' && platform !== 'android') {
-    console.log('RevenueCat: Web platform detected, skipping initialization');
+    console.log('RevenueCat: Web platform, skipping');
     return { success: false, reason: 'web_platform' };
   }
   
@@ -34,25 +47,16 @@ export async function initializeRevenueCat(userId = null) {
   }
   
   try {
-    // Dynamically import RevenueCat
     const purchasesModule = await import('@revenuecat/purchases-capacitor');
     Purchases = purchasesModule.Purchases;
     const { LOG_LEVEL } = purchasesModule;
     
-    // Set debug logging in development
-    if (process.env.NODE_ENV === 'development') {
-      await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
-    }
+    // Enable debug logging
+    await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
     
-    // Get the appropriate API key for the platform
-    const apiKey = platform === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
+    const apiKey = platform === 'ios' ? CONFIG.ios.apiKey : CONFIG.android.apiKey;
     
-    // Configure RevenueCat
-    const configOptions = {
-      apiKey: apiKey,
-    };
-    
-    // Set app user ID if provided (for linking with backend user)
+    const configOptions = { apiKey };
     if (userId) {
       configOptions.appUserID = userId;
     }
@@ -60,11 +64,11 @@ export async function initializeRevenueCat(userId = null) {
     await Purchases.configure(configOptions);
     isInitialized = true;
     
-    console.log(`RevenueCat: Successfully initialized for ${platform}`);
+    console.log(`RevenueCat: Initialized for ${platform}`);
     return { success: true, platform };
     
   } catch (error) {
-    console.error('RevenueCat initialization error:', error);
+    console.error('RevenueCat init error:', error);
     return { success: false, error: error.message };
   }
 }
@@ -74,40 +78,98 @@ export async function initializeRevenueCat(userId = null) {
  */
 export async function getOfferings() {
   if (!isInitialized || !Purchases) {
+    console.error('RevenueCat: Not initialized');
     throw new Error('RevenueCat not initialized');
   }
   
   try {
+    console.log('RevenueCat: Fetching offerings...');
     const offerings = await Purchases.getOfferings();
+    console.log('RevenueCat: Raw offerings:', JSON.stringify(offerings, null, 2));
     
-    if (!offerings.current) {
-      return { packages: [], hasOfferings: false };
+    // Check if we have any offerings
+    if (!offerings || !offerings.current) {
+      console.warn('RevenueCat: No current offering found');
+      
+      // Try to get by identifier
+      if (offerings?.all && offerings.all[CONFIG.offeringId]) {
+        const defaultOffering = offerings.all[CONFIG.offeringId];
+        console.log('RevenueCat: Found offering by ID:', CONFIG.offeringId);
+        return processOffering(defaultOffering, offerings);
+      }
+      
+      return { packages: [], hasOfferings: false, raw: offerings };
     }
     
-    // Map packages to a simpler format
-    const packages = offerings.current.availablePackages.map(pkg => ({
+    return processOffering(offerings.current, offerings);
+    
+  } catch (error) {
+    console.error('RevenueCat: Failed to get offerings:', error);
+    throw error;
+  }
+}
+
+/**
+ * Process an offering into a standardized format
+ */
+function processOffering(offering, rawOfferings) {
+  if (!offering) {
+    return { packages: [], hasOfferings: false, raw: rawOfferings };
+  }
+  
+  const availablePackages = offering.availablePackages || [];
+  console.log('RevenueCat: Available packages:', availablePackages.length);
+  
+  // Map packages to simpler format
+  const packages = availablePackages.map(pkg => {
+    console.log('RevenueCat: Package:', pkg.identifier, pkg.product?.identifier);
+    return {
       identifier: pkg.identifier,
       productId: pkg.product?.identifier || pkg.identifier,
       title: pkg.product?.title || pkg.identifier,
       description: pkg.product?.description || '',
       price: pkg.product?.priceString || '$0.00',
       priceAmount: pkg.product?.price || 0,
-      periodType: pkg.packageType, // MONTHLY, ANNUAL, etc.
-      rawPackage: pkg // Keep original for purchasing
-    }));
-    
-    return {
-      packages,
-      hasOfferings: true,
-      monthly: offerings.current.monthly,
-      annual: offerings.current.annual,
-      raw: offerings
+      periodType: pkg.packageType,
+      rawPackage: pkg
     };
-    
-  } catch (error) {
-    console.error('Failed to get offerings:', error);
-    throw error;
-  }
+  });
+  
+  // Find monthly and yearly packages
+  const monthly = availablePackages.find(p => 
+    p.identifier === '$rc_monthly' || 
+    p.packageType === 'MONTHLY' ||
+    p.product?.identifier === CONFIG.products.monthly
+  );
+  
+  const annual = availablePackages.find(p => 
+    p.identifier === '$rc_annual' || 
+    p.packageType === 'ANNUAL' ||
+    p.product?.identifier === CONFIG.products.yearly
+  );
+  
+  console.log('RevenueCat: Monthly package:', monthly?.identifier);
+  console.log('RevenueCat: Annual package:', annual?.identifier);
+  
+  return {
+    packages,
+    hasOfferings: packages.length > 0,
+    monthly: monthly ? { rawPackage: monthly, ...formatPackage(monthly) } : null,
+    annual: annual ? { rawPackage: annual, ...formatPackage(annual) } : null,
+    raw: rawOfferings
+  };
+}
+
+/**
+ * Format a package for display
+ */
+function formatPackage(pkg) {
+  return {
+    identifier: pkg.identifier,
+    productId: pkg.product?.identifier,
+    price: pkg.product?.priceString || '$0.00',
+    priceAmount: pkg.product?.price || 0
+  };
 }
 
 /**
@@ -118,13 +180,17 @@ export async function purchasePackage(packageToPurchase) {
     throw new Error('RevenueCat not initialized');
   }
   
+  console.log('RevenueCat: Attempting purchase:', packageToPurchase?.identifier);
+  
   try {
     const result = await Purchases.purchasePackage({ 
       aPackage: packageToPurchase 
     });
     
-    // Check if premium entitlement is now active
-    const isPremium = result.customerInfo?.entitlements?.active?.['premium']?.isActive || false;
+    console.log('RevenueCat: Purchase result:', JSON.stringify(result, null, 2));
+    
+    // Check for premium entitlement
+    const isPremium = result.customerInfo?.entitlements?.active?.[CONFIG.entitlementId]?.isActive || false;
     
     return {
       success: true,
@@ -133,8 +199,13 @@ export async function purchasePackage(packageToPurchase) {
     };
     
   } catch (error) {
+    console.error('RevenueCat: Purchase error:', error);
+    
     // Check if user cancelled
-    if (error.code === 'PURCHASE_CANCELLED_ERROR' || error.userCancelled) {
+    if (error.code === 'PURCHASE_CANCELLED_ERROR' || 
+        error.code === 1 || 
+        error.userCancelled ||
+        error.message?.includes('cancel')) {
       return {
         success: false,
         cancelled: true,
@@ -142,7 +213,6 @@ export async function purchasePackage(packageToPurchase) {
       };
     }
     
-    console.error('Purchase error:', error);
     return {
       success: false,
       cancelled: false,
@@ -156,16 +226,15 @@ export async function purchasePackage(packageToPurchase) {
  */
 export async function getSubscriptionStatus() {
   if (!isInitialized || !Purchases) {
-    return {
-      isPremium: false,
-      isInitialized: false
-    };
+    return { isPremium: false, isInitialized: false };
   }
   
   try {
     const customerInfo = await Purchases.getCustomerInfo();
+    console.log('RevenueCat: Customer info:', JSON.stringify(customerInfo, null, 2));
     
-    const premiumEntitlement = customerInfo.entitlements?.active?.['premium'];
+    const premiumEntitlement = customerInfo.customerInfo?.entitlements?.active?.[CONFIG.entitlementId] ||
+                               customerInfo.entitlements?.active?.[CONFIG.entitlementId];
     
     return {
       isPremium: premiumEntitlement?.isActive || false,
@@ -178,7 +247,7 @@ export async function getSubscriptionStatus() {
     };
     
   } catch (error) {
-    console.error('Failed to get subscription status:', error);
+    console.error('RevenueCat: Failed to get status:', error);
     return {
       isPremium: false,
       isInitialized: true,
@@ -196,9 +265,11 @@ export async function restorePurchases() {
   }
   
   try {
-    const customerInfo = await Purchases.restorePurchases();
+    const result = await Purchases.restorePurchases();
+    console.log('RevenueCat: Restore result:', JSON.stringify(result, null, 2));
     
-    const premiumEntitlement = customerInfo.entitlements?.active?.['premium'];
+    const customerInfo = result.customerInfo || result;
+    const premiumEntitlement = customerInfo.entitlements?.active?.[CONFIG.entitlementId];
     const hasEntitlements = Object.keys(customerInfo.entitlements?.active || {}).length > 0;
     
     return {
@@ -209,7 +280,7 @@ export async function restorePurchases() {
     };
     
   } catch (error) {
-    console.error('Restore purchases error:', error);
+    console.error('RevenueCat: Restore error:', error);
     return {
       success: false,
       error: error.message || 'Failed to restore purchases'
@@ -218,11 +289,11 @@ export async function restorePurchases() {
 }
 
 /**
- * Set the app user ID (for linking with your backend user)
+ * Set the app user ID
  */
 export async function setAppUserID(userId) {
   if (!isInitialized || !Purchases) {
-    console.warn('RevenueCat not initialized, cannot set user ID');
+    console.warn('RevenueCat: Not initialized');
     return false;
   }
   
@@ -230,13 +301,13 @@ export async function setAppUserID(userId) {
     await Purchases.logIn({ appUserID: userId });
     return true;
   } catch (error) {
-    console.error('Failed to set app user ID:', error);
+    console.error('RevenueCat: Failed to set user ID:', error);
     return false;
   }
 }
 
 /**
- * Check if RevenueCat is available (native platform)
+ * Check if RevenueCat is available
  */
 export function isRevenueCatAvailable() {
   const platform = Capacitor.getPlatform();
@@ -248,4 +319,11 @@ export function isRevenueCatAvailable() {
  */
 export function isRevenueCatInitialized() {
   return isInitialized;
+}
+
+/**
+ * Get config (for debugging)
+ */
+export function getConfig() {
+  return CONFIG;
 }
