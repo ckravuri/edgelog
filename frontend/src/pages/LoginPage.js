@@ -167,12 +167,13 @@ export default function LoginPage() {
         // Send token to backend for verification
         let backendResponse;
         try {
+          console.log('Making fetch request to:', `${API}/auth/apple`);
           backendResponse = await fetch(`${API}/auth/apple`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Accept': 'application/json',
             },
-            credentials: 'include',
             body: JSON.stringify({
               identity_token: result.response.identityToken,
               user_id: result.response.user,
@@ -182,9 +183,12 @@ export default function LoginPage() {
                 : null,
             }),
           });
+          console.log('Fetch completed, status:', backendResponse.status);
         } catch (fetchError) {
-          console.error('Fetch error:', fetchError);
-          throw new Error(`Network error: ${fetchError.message}. API: ${API}`);
+          console.error('Fetch error name:', fetchError.name);
+          console.error('Fetch error message:', fetchError.message);
+          console.error('Fetch error:', JSON.stringify(fetchError, Object.getOwnPropertyNames(fetchError)));
+          throw new Error(`Network error: ${fetchError.message || 'Unknown'}. API: ${API}`);
         }
 
         console.log('Backend response status:', backendResponse.status);
