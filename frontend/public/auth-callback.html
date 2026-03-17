@@ -46,10 +46,22 @@
             text-decoration: none;
             margin-top: 32px;
             text-align: center;
+            position: relative;
         }
         .btn:active {
             transform: scale(0.98);
             opacity: 0.9;
+        }
+        .arrow {
+            position: absolute;
+            top: -60px;
+            right: 20px;
+            font-size: 40px;
+            animation: bounce 1s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
         .error { color: #ef4444; margin-bottom: 16px; }
         #loading { display: block; }
@@ -70,7 +82,10 @@
             </div>
             <h1>Sign In Successful!</h1>
             <p>You're all set and ready to go.</p>
-            <button id="continueBtn" class="btn" onclick="window.close();">Click to Continue</button>
+            <div style="position: relative; margin-top: 40px;">
+                <div class="arrow">☝️</div>
+                <button class="btn">Tap "Done" above to continue</button>
+            </div>
         </div>
         <div id="error-state">
             <div class="icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
@@ -78,7 +93,7 @@
             </div>
             <h1>Sign In Failed</h1>
             <p class="error" id="error-message">An error occurred.</p>
-            <button class="btn" onclick="window.close();">Close</button>
+            <button class="btn">Tap "Done" to close</button>
         </div>
     </div>
     <script>
