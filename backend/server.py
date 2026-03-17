@@ -279,6 +279,13 @@ async def get_me(user: User = Depends(get_current_user)):
 @api_router.post("/auth/logout")
 async def logout(request: Request, response: Response):
     """Logout user"""
+    # Try to get token from Authorization header (for native apps)
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ")[1]
+        await db.user_sessions.delete_many({"session_token": token})
+    
+    # Also try cookie-based session (for web)
     session_token = request.cookies.get("session_token")
     if session_token:
         await db.user_sessions.delete_many({"session_token": session_token})
