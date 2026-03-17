@@ -65,7 +65,6 @@
             border: 1px solid #222;
             border-radius: 16px;
             padding: 20px;
-            margin-bottom: 16px;
         }
         .instruction-text {
             font-size: 16px;
@@ -75,27 +74,6 @@
         .instruction-text strong {
             color: white;
             font-weight: 600;
-        }
-        .close-hint {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #1a1a1a;
-            padding: 10px 20px;
-            border-radius: 100px;
-            font-size: 14px;
-            color: #888;
-        }
-        .close-hint .x-icon {
-            width: 20px;
-            height: 20px;
-            background: #333;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            color: #888;
         }
         .spinner-container {
             display: flex;
@@ -136,6 +114,10 @@
             font-size: 14px;
             margin-bottom: 24px;
         }
+        .error-hint {
+            color: #666;
+            font-size: 14px;
+        }
         #loading { display: block; }
         #success { display: none; }
         #error-state { display: none; }
@@ -163,10 +145,6 @@
                     Tap the <strong>✕</strong> button in the<br>top-left corner to continue
                 </p>
             </div>
-            <div class="close-hint">
-                <span class="x-icon">✕</span>
-                <span>Close this window</span>
-            </div>
         </div>
         
         <div id="error-state">
@@ -175,10 +153,7 @@
             </div>
             <h1>Sign in failed</h1>
             <p class="error-msg" id="error-message">Something went wrong</p>
-            <div class="close-hint">
-                <span class="x-icon">✕</span>
-                <span>Close and try again</span>
-            </div>
+            <p class="error-hint">Close this window and try again</p>
         </div>
     </div>
     
