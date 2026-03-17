@@ -3,76 +3,139 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>EdgeLog - Sign In</title>
+    <title>EdgeLog</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            background: #000;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
+            padding: 24px;
         }
-        .container { text-align: center; padding: 40px; max-width: 400px; }
-        .icon {
-            width: 80px; height: 80px; margin: 0 auto 24px;
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        }
-        .icon svg { width: 40px; height: 40px; fill: white; }
-        .spinner {
-            width: 40px; height: 40px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: #22c55e;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        h1 { font-size: 24px; margin-bottom: 12px; }
-        p { color: #888; margin-bottom: 16px; }
-        .btn {
-            display: block;
+        .container { 
+            text-align: center; 
+            max-width: 320px;
             width: 100%;
-            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-            color: white;
-            padding: 18px 32px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 18px;
-            border: none;
-            cursor: pointer;
-            text-decoration: none;
-            margin-top: 32px;
-            text-align: center;
         }
-        .btn:active {
-            transform: scale(0.98);
-            opacity: 0.9;
-        }
-        .arrow-container {
-            position: fixed;
-            top: 60px;
-            left: 30px;
-            text-align: center;
-        }
-        .arrow {
-            font-size: 36px;
-            animation: bounce 1s infinite;
-            transform: rotate(-45deg);
-        }
-        @keyframes bounce {
-            0%, 100% { transform: rotate(-45deg) translateY(0); }
-            50% { transform: rotate(-45deg) translateY(-10px); }
-        }
-        .arrow-text {
-            font-size: 12px;
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            margin-bottom: 48px;
             color: #22c55e;
-            margin-top: 5px;
+        }
+        .checkmark {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 24px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.3s ease-out;
+        }
+        @keyframes scaleIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+        .checkmark svg {
+            width: 36px;
+            height: 36px;
+            fill: white;
+        }
+        h1 { 
+            font-size: 22px; 
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: white;
+        }
+        .subtitle { 
+            color: #666; 
+            font-size: 15px;
+            margin-bottom: 40px;
+        }
+        .instruction {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .instruction-text {
+            font-size: 16px;
+            color: #999;
+            line-height: 1.5;
+        }
+        .instruction-text strong {
+            color: white;
             font-weight: 600;
         }
-        .error { color: #ef4444; margin-bottom: 16px; }
+        .close-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #1a1a1a;
+            padding: 10px 20px;
+            border-radius: 100px;
+            font-size: 14px;
+            color: #888;
+        }
+        .close-hint .x-icon {
+            width: 20px;
+            height: 20px;
+            background: #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #888;
+        }
+        .spinner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #222;
+            border-top-color: #22c55e;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            color: #666;
+            font-size: 15px;
+        }
+        .error-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 24px;
+            background: #ef4444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-icon svg {
+            width: 36px;
+            height: 36px;
+            fill: white;
+        }
+        .error-msg {
+            color: #ef4444;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
         #loading { display: block; }
         #success { display: none; }
         #error-state { display: none; }
@@ -80,35 +143,47 @@
 </head>
 <body>
     <div class="container">
+        <div class="logo">EDGELOG</div>
+        
         <div id="loading">
-            <div class="icon"><div class="spinner"></div></div>
-            <h1>Completing Sign In...</h1>
-            <p>Please wait while we authenticate you.</p>
-        </div>
-        <div id="success">
-            <div class="arrow-container">
-                <div class="arrow">👆</div>
-                <div class="arrow-text">Tap X to close</div>
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <div class="loading-text">Signing you in...</div>
             </div>
-            <div class="icon">
+        </div>
+        
+        <div id="success">
+            <div class="checkmark">
                 <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             </div>
-            <h1>Sign In Successful!</h1>
-            <p>You're all set and ready to go.</p>
-            <div class="btn">Tap ✕ in top left to continue</div>
+            <h1>You're signed in!</h1>
+            <p class="subtitle">Your account is ready to use</p>
+            <div class="instruction">
+                <p class="instruction-text">
+                    Tap the <strong>✕</strong> button in the<br>top-left corner to continue
+                </p>
+            </div>
+            <div class="close-hint">
+                <span class="x-icon">✕</span>
+                <span>Close this window</span>
+            </div>
         </div>
+        
         <div id="error-state">
-            <div class="icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+            <div class="error-icon">
                 <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
             </div>
-            <h1>Sign In Failed</h1>
-            <p class="error" id="error-message">An error occurred.</p>
-            <div class="btn">Tap ✕ to close and retry</div>
+            <h1>Sign in failed</h1>
+            <p class="error-msg" id="error-message">Something went wrong</p>
+            <div class="close-hint">
+                <span class="x-icon">✕</span>
+                <span>Close and try again</span>
+            </div>
         </div>
     </div>
+    
     <script>
         const API_URL = 'https://trade-journal-app-16.preview.emergentagent.com/api';
-        
         const urlParams = new URLSearchParams(window.location.search);
         const authRequestId = urlParams.get('auth_request_id');
         
@@ -116,7 +191,7 @@
             try {
                 const hash = window.location.hash;
                 const sessionIdMatch = hash.match(/session_id=([^&]+)/);
-                if (!sessionIdMatch) throw new Error('No session ID found.');
+                if (!sessionIdMatch) throw new Error('Session not found');
                 const sessionId = sessionIdMatch[1];
                 
                 const response = await fetch(API_URL + '/auth/session', {
@@ -129,7 +204,6 @@
                 if (!response.ok) throw new Error('Authentication failed');
                 
                 const data = await response.json();
-                const sessionToken = data.session_token;
                 
                 if (authRequestId) {
                     await fetch(API_URL + '/auth/native/store', {
@@ -137,7 +211,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
                             auth_request_id: authRequestId,
-                            session_token: sessionToken 
+                            session_token: data.session_token 
                         }),
                     });
                 }
