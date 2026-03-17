@@ -1,3 +1,4 @@
+import { authFetch } from "@/utils/authFetch";
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { User, Bell, Shield, LogOut, ChevronRight, Clock, FileText, Crown, Upload, Download } from "lucide-react";
@@ -23,7 +24,7 @@ export default function SettingsPage({ user }) {
     // Load reminder settings
     const loadReminders = async () => {
       try {
-        const response = await fetch(`${API}/settings/reminders`, { credentials: 'include' });
+        const response = await authFetch('/settings/reminders';
         if (response.ok) {
           const data = await response.json();
           setReminderEnabled(data.daily_reminder_enabled || false);
@@ -37,7 +38,7 @@ export default function SettingsPage({ user }) {
     // Load subscription status
     const loadSubscription = async () => {
       try {
-        const response = await fetch(`${API}/subscription/status`, { credentials: 'include' });
+        const response = await authFetch('/subscription/status';
         if (response.ok) {
           const data = await response.json();
           setSubscriptionStatus(data);
@@ -56,7 +57,7 @@ export default function SettingsPage({ user }) {
     setMaxTrades(newValue);
     
     try {
-      await fetch(`${API}/settings/discipline`, {
+      await authFetch('/settings/discipline', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -73,7 +74,7 @@ export default function SettingsPage({ user }) {
     setReminderEnabled(newValue);
     
     try {
-      await fetch(`${API}/settings/reminders`, {
+      await authFetch('/settings/reminders', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -91,7 +92,7 @@ export default function SettingsPage({ user }) {
   const handleLogout = async () => {
     setLoading(true);
     try {
-      await fetch(`${API}/auth/logout`, {
+      await authFetch('/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
@@ -224,7 +225,7 @@ export default function SettingsPage({ user }) {
                   return;
                 }
                 try {
-                  const response = await fetch(`${API}/export/trades?format=csv`, { credentials: 'include' });
+                  const response = await authFetch('/export/trades?format=csv';
                   if (response.ok) {
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);

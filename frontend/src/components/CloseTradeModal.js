@@ -1,3 +1,4 @@
+import { authFetch } from "@/utils/authFetch";
 import React, { useState } from "react";
 import { X, TrendingUp, TrendingDown, Minus, Calculator } from "lucide-react";
 import { toast } from "sonner";
@@ -59,7 +60,7 @@ export default function CloseTradeModal({ trade, onClose, onTradeUpdated }) {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API}/trades/${trade.trade_id}`, {
+      const response = await authFetch('/trades/${trade.trade_id}', {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

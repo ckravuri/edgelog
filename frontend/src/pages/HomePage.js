@@ -6,6 +6,7 @@ import DisciplineRing from "@/components/DisciplineRing";
 import TradeCard from "@/components/TradeCard";
 import CloseTradeModal from "@/components/CloseTradeModal";
 import EditTradeModal from "@/components/EditTradeModal";
+import { authFetch } from "@/utils/authFetch";
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
@@ -21,8 +22,8 @@ export default function HomePage({ user }) {
   const fetchData = useCallback(async () => {
     try {
       const [analyticsRes, tradesRes] = await Promise.all([
-        fetch(`${API}/analytics/summary`, { credentials: 'include' }),
-        fetch(`${API}/trades/today`, { credentials: 'include' })
+        authFetch('/analytics/summary'),
+        authFetch('/trades/today')
       ]);
       
       if (analyticsRes.ok) {

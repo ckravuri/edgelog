@@ -1,3 +1,4 @@
+import { authFetch } from "@/utils/authFetch";
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Upload, FileText, AlertCircle, CheckCircle, Crown } from 'lucide-react';
@@ -22,7 +23,7 @@ export default function ImportPage() {
 
   const checkPremiumStatus = async () => {
     try {
-      const response = await fetch(`${API}/subscription/status`, {
+      const response = await authFetch('/subscription/status', {
         credentials: 'include'
       });
       if (response.ok) {
@@ -62,7 +63,7 @@ export default function ImportPage() {
     setResult(null);
 
     try {
-      const response = await fetch(`${API}/import/mt4mt5`, {
+      const response = await authFetch('/import/mt4mt5', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

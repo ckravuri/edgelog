@@ -1,3 +1,4 @@
+import { authFetch } from "@/utils/authFetch";
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, TrendingUp, TrendingDown, X, Camera, Image, Upload, Loader2 } from "lucide-react";
@@ -63,7 +64,7 @@ export default function AddTradePage({ user }) {
     setUploading(true);
     try {
       // Get signature from backend
-      const sigResponse = await fetch(`${API}/cloudinary/signature?resource_type=image&folder=screenshots`, {
+      const sigResponse = await authFetch('/cloudinary/signature?resource_type=image&folder=screenshots', {
         credentials: 'include'
       });
       
@@ -127,7 +128,7 @@ export default function AddTradePage({ user }) {
         screenshot_url: form.screenshot_url || null
       };
       
-      const response = await fetch(`${API}/trades`, {
+      const response = await authFetch('/trades', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

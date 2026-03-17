@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, LineChart, Line, Tooltip, CartesianGrid, AreaChart, Area } from "recharts";
 import { TrendingUp, TrendingDown, Activity, Target, Sparkles } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import { authFetch } from "@/utils/authFetch";
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
@@ -16,8 +17,8 @@ export default function DashboardPage({ user }) {
   const fetchData = useCallback(async () => {
     try {
       const [analyticsRes, dailyRes] = await Promise.all([
-        fetch(`${API}/analytics/summary`, { credentials: 'include' }),
-        fetch(`${API}/analytics/daily`, { credentials: 'include' })
+        authFetch('/analytics/summary'),
+        authFetch('/analytics/daily')
       ]);
       
       if (analyticsRes.ok) {

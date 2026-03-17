@@ -1,3 +1,4 @@
+import { authFetch } from "@/utils/authFetch";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Filter, Search, TrendingUp, TrendingDown, Clock } from "lucide-react";
@@ -27,7 +28,7 @@ export default function HistoryPage({ user }) {
 
   const fetchTrades = useCallback(async () => {
     try {
-      const response = await fetch(`${API}/trades`, { credentials: 'include' });
+      const response = await authFetch('/trades';
       if (response.ok) {
         const data = await response.json();
         setTrades(data);

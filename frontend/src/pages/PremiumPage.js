@@ -1,3 +1,4 @@
+import { authFetch } from "@/utils/authFetch";
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Crown, Check, X, Zap, Shield, Download, Brain, ChevronLeft, Tag, RefreshCw, Loader2 } from 'lucide-react';
@@ -24,7 +25,7 @@ export default function PremiumPage() {
 
   const fetchSubscriptionStatus = async () => {
     try {
-      const response = await fetch(`${API}/subscription/status`, {
+      const response = await authFetch('/subscription/status', {
         credentials: 'include'
       });
       if (response.ok) {
@@ -44,7 +45,7 @@ export default function PremiumPage() {
     
     try {
       // First validate
-      const validateResponse = await fetch(`${API}/coupons/validate`, {
+      const validateResponse = await authFetch('/coupons/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -58,7 +59,7 @@ export default function PremiumPage() {
       }
       
       // Then apply
-      const applyResponse = await fetch(`${API}/coupons/apply`, {
+      const applyResponse = await authFetch('/coupons/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

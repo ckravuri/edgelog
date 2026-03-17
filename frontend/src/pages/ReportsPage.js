@@ -1,3 +1,4 @@
+import { authFetch } from "@/utils/authFetch";
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Sparkles, Download, Share2, Twitter, Facebook, MessageCircle, Loader2, TrendingUp, TrendingDown, Target, Trophy, FileText, Crown } from "lucide-react";
@@ -21,7 +22,7 @@ export default function ReportsPage({ user }) {
     // Check premium status
     const checkPremium = async () => {
       try {
-        const response = await fetch(`${API}/subscription/status`, { credentials: 'include' });
+        const response = await authFetch('/subscription/status';
         if (response.ok) {
           const data = await response.json();
           setIsPremium(data.is_premium);
@@ -36,7 +37,7 @@ export default function ReportsPage({ user }) {
   const generateReport = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API}/reports/generate?period=${period}`, {
+      const response = await authFetch('/reports/generate?period=${period}', {
         method: 'POST',
         credentials: 'include'
       });
@@ -69,7 +70,7 @@ export default function ReportsPage({ user }) {
     
     setDownloadingPdf(true);
     try {
-      const response = await fetch(`${API}/export/report/${report.report_id}?format=pdf`, {
+      const response = await authFetch('/export/report/${report.report_id}?format=pdf', {
         credentials: 'include'
       });
       

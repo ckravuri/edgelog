@@ -1,3 +1,4 @@
+import { authFetch } from "@/utils/authFetch";
 import React, { useState } from "react";
 import { X, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -37,7 +38,7 @@ export default function EditTradeModal({ trade, onClose, onTradeUpdated }) {
     setLoading(true);
     try {
       // Note: We only update editable fields, not outcome/pnl
-      const response = await fetch(`${API}/trades/${trade.trade_id}`, {
+      const response = await authFetch('/trades/${trade.trade_id}', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -64,7 +65,7 @@ export default function EditTradeModal({ trade, onClose, onTradeUpdated }) {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API}/trades/${trade.trade_id}`, {
+      const response = await authFetch('/trades/${trade.trade_id}', {
         method: 'DELETE',
         credentials: 'include'
       });
