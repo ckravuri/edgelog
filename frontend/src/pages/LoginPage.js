@@ -162,22 +162,30 @@ export default function LoginPage() {
       
       if (result.response && result.response.identityToken) {
         console.log('Got identity token, sending to backend...');
+        console.log('API URL:', API);
+        
         // Send token to backend for verification
-        const backendResponse = await fetch(`${API}/auth/apple`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            identity_token: result.response.identityToken,
-            user_id: result.response.user,
-            email: result.response.email,
-            name: result.response.givenName 
-              ? `${result.response.givenName} ${result.response.familyName || ''}`.trim()
-              : null,
-          }),
-        });
+        let backendResponse;
+        try {
+          backendResponse = await fetch(`${API}/auth/apple`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              identity_token: result.response.identityToken,
+              user_id: result.response.user,
+              email: result.response.email,
+              name: result.response.givenName 
+                ? `${result.response.givenName} ${result.response.familyName || ''}`.trim()
+                : null,
+            }),
+          });
+        } catch (fetchError) {
+          console.error('Fetch error:', fetchError);
+          throw new Error(`Network error: ${fetchError.message}. API: ${API}`);
+        }
 
         console.log('Backend response status:', backendResponse.status);
         
