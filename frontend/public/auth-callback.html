@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>EdgeLog - Completing Sign In...</title>
+    <title>EdgeLog - Sign In</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -31,8 +31,26 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         h1 { font-size: 24px; margin-bottom: 12px; }
-        p { color: #888; margin-bottom: 32px; }
-        .note { margin-top: 24px; font-size: 14px; color: #666; }
+        p { color: #888; margin-bottom: 16px; }
+        .btn {
+            display: block;
+            width: 100%;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: white;
+            padding: 18px 32px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 18px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            margin-top: 32px;
+            text-align: center;
+        }
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
         .error { color: #ef4444; margin-bottom: 16px; }
         #loading { display: block; }
         #success { display: none; }
@@ -51,8 +69,8 @@
                 <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
             </div>
             <h1>Sign In Successful!</h1>
-            <p>Returning to EdgeLog...</p>
-            <p class="note">This window will close automatically.<br>If it doesn't, you can close it manually.</p>
+            <p>You're all set and ready to go.</p>
+            <button id="continueBtn" class="btn" onclick="window.close();">Click to Continue</button>
         </div>
         <div id="error-state">
             <div class="icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
@@ -60,13 +78,12 @@
             </div>
             <h1>Sign In Failed</h1>
             <p class="error" id="error-message">An error occurred.</p>
-            <p class="note">Please close this window and try again.</p>
+            <button class="btn" onclick="window.close();">Close</button>
         </div>
     </div>
     <script>
         const API_URL = 'https://trade-journal-app-16.preview.emergentagent.com/api';
         
-        // Get auth_request_id from URL if present
         const urlParams = new URLSearchParams(window.location.search);
         const authRequestId = urlParams.get('auth_request_id');
         
@@ -89,7 +106,6 @@
                 const data = await response.json();
                 const sessionToken = data.session_token;
                 
-                // Store token on server for native app to retrieve
                 if (authRequestId) {
                     await fetch(API_URL + '/auth/native/store', {
                         method: 'POST',
@@ -101,25 +117,8 @@
                     });
                 }
                 
-                // Show success message briefly
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('success').style.display = 'block';
-                
-                // Auto-close the browser after a short delay
-                // The native app is polling for the auth token, so it will pick it up
-                setTimeout(function() {
-                    // Try to close the window/tab
-                    window.close();
-                    
-                    // For iOS in-app browser, try using webkit message handler
-                    if (window.webkit && window.webkit.messageHandlers) {
-                        try {
-                            window.webkit.messageHandlers.close.postMessage('close');
-                        } catch (e) {
-                            console.log('No webkit close handler');
-                        }
-                    }
-                }, 1500);
                 
             } catch (error) {
                 document.getElementById('loading').style.display = 'none';
