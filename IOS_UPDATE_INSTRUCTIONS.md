@@ -17,23 +17,23 @@
 
 1. **LoginPage.js** (Frontend):
    ```
-   https://trade-journal-test.preview.emergentagent.com/api/file/frontend/src/pages/LoginPage.js
+   https://trade-journal-app-16.preview.emergentagent.com/api/file/frontend/src/pages/LoginPage.js
    ```
    Or view at: View the file content below
 
 2. **terms.html** (NEW - Public folder):
    ```
-   https://trade-journal-test.preview.emergentagent.com/terms.html
+   https://trade-journal-app-16.preview.emergentagent.com/terms.html
    ```
 
 3. **privacy.html** (NEW - Public folder):
    ```
-   https://trade-journal-test.preview.emergentagent.com/privacy.html
+   https://trade-journal-app-16.preview.emergentagent.com/privacy.html
    ```
 
 4. **Premium Promotional Image** (1024x1024 PNG):
    ```
-   https://trade-journal-test.preview.emergentagent.com/premium_promo_1024x1024.png
+   https://trade-journal-app-16.preview.emergentagent.com/premium_promo_1024x1024.png
    ```
 
 ---
@@ -59,8 +59,8 @@ Copy these 2 new HTML files to your `frontend/public/` folder:
 You can download them directly:
 ```bash
 cd frontend/public
-curl -O https://trade-journal-test.preview.emergentagent.com/terms.html
-curl -O https://trade-journal-test.preview.emergentagent.com/privacy.html
+curl -O https://trade-journal-app-16.preview.emergentagent.com/terms.html
+curl -O https://trade-journal-app-16.preview.emergentagent.com/privacy.html
 ```
 
 ### 2.3 Backend Update (server.py)
@@ -110,15 +110,15 @@ npx cap open ios
 2. Scroll to **Description** field
 3. Add at the end:
    ```
-   Terms of Service: https://trade-journal-test.preview.emergentagent.com/terms.html
-   Privacy Policy: https://trade-journal-test.preview.emergentagent.com/privacy.html
+   Terms of Service: https://trade-journal-app-16.preview.emergentagent.com/terms.html
+   Privacy Policy: https://trade-journal-app-16.preview.emergentagent.com/privacy.html
    ```
 
 **Option B - Custom EULA (Recommended):**
 1. Go to **App Store Connect** → Your App → **App Information**
 2. Scroll to **License Agreement** section
 3. Select **Custom App License Agreement**
-4. Enter URL: `https://trade-journal-test.preview.emergentagent.com/terms.html`
+4. Enter URL: `https://trade-journal-app-16.preview.emergentagent.com/terms.html`
 
 ### 4.2 Update IAP Promotional Image
 
@@ -130,7 +130,7 @@ npx cap open ios
 
 Download image from:
 ```
-https://trade-journal-test.preview.emergentagent.com/premium_promo_1024x1024.png
+https://trade-journal-app-16.preview.emergentagent.com/premium_promo_1024x1024.png
 ```
 
 ---
@@ -164,7 +164,7 @@ const handleAppleLogin = async () => {
     
     const options = {
       clientId: 'com.ravuri.edgelog',
-      redirectURI: 'https://trade-journal-test.preview.emergentagent.com',
+      redirectURI: 'https://trade-journal-app-16.preview.emergentagent.com',
       scopes: 'email name',
       state: Math.random().toString(36).substring(7),
       nonce: Math.random().toString(36).substring(7),
@@ -236,9 +236,9 @@ const handleAppleLogin = async () => {
 
 | Resource | URL |
 |----------|-----|
-| Terms of Service | https://trade-journal-test.preview.emergentagent.com/terms.html |
-| Privacy Policy | https://trade-journal-test.preview.emergentagent.com/privacy.html |
-| Premium Promo Image | https://trade-journal-test.preview.emergentagent.com/premium_promo_1024x1024.png |
+| Terms of Service | https://trade-journal-app-16.preview.emergentagent.com/terms.html |
+| Privacy Policy | https://trade-journal-app-16.preview.emergentagent.com/privacy.html |
+| Premium Promo Image | https://trade-journal-app-16.preview.emergentagent.com/premium_promo_1024x1024.png |
 | Full LoginPage.js | View on server at `/frontend/src/pages/LoginPage.js` |
 
 ---

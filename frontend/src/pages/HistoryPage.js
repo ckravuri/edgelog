@@ -28,7 +28,7 @@ export default function HistoryPage({ user }) {
 
   const fetchTrades = useCallback(async () => {
     try {
-      const response = await authFetch('/trades';
+      const response = await authFetch('/trades');
       if (response.ok) {
         const data = await response.json();
         setTrades(data);

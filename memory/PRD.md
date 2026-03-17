@@ -74,6 +74,12 @@ EdgeLog is a professional trading journal PWA designed for traders to track, ana
 - [x] Terms of Service page
 - [x] Updated Settings page with trial/premium status
 
+### Version 1.5 - Bug Fixes (Mar 17, 2026)
+- [x] **Fixed authFetch refactor issues** - Fixed broken template literals across 5 files
+- [x] **Added Trade Outcome on Add page** - Can now specify Win/Loss/Open when adding trade
+- [x] **P/L toggle (Dollars/Points)** - User can choose to enter P/L in dollars or points
+- [x] **Fixed EditTradeModal** - Was sending literal `${trade.trade_id}` instead of actual ID
+
 ## Architecture
 ```
 Frontend (React PWA + Capacitor)
@@ -98,79 +104,45 @@ Database (MongoDB)
 ├── user_sessions
 ├── trades
 ├── reports
+├── coupons
+├── user_coupons
 └── reminder_settings
 ```
 
-## Integrations
-| Service | Purpose | Status |
-|---------|---------|--------|
-| Emergent OAuth | Google Sign-In | ✅ Active |
-| Apple Sign-In | iOS native auth | ✅ Implemented |
-| Cloudinary | Screenshot storage | ✅ Active |
-| GPT-5.2 | AI insights | ✅ Active |
-| RevenueCat | Subscriptions | ✅ Integrated (iOS: appl_fkQLSsiDoBAFKVrZuCAWNWUuhVh, Android: goog_CoRsfTgnHXZjUYvcNgXosmzVArw) |
-| Google AdMob | Ads | ✅ Integrated (iOS App: ca-app-pub-8958093663498636~7989527556, Android App: ca-app-pub-8958093663498636~5932109432) |
+## Key Files Reference
+- `frontend/src/utils/authFetch.js` - Centralized authenticated API calls
+- `frontend/src/pages/AddTradePage.js` - Trade entry with outcome/P&L
+- `frontend/src/components/EditTradeModal.js` - Edit closed trades
+- `frontend/src/components/CloseTradeModal.js` - Close open trades
+- `frontend/src/pages/HomePage.js` - Home dashboard
+- `frontend/src/pages/DashboardPage.js` - Analytics
+- `frontend/src/context/MonetizationContext.js` - RevenueCat/AdMob
 
-## Monetization Model
+## Pending Issues (P0/P1)
+1. **RevenueCat Offerings Not Loading (P1)** - Premium page shows "offerings not loaded" error
+2. **Android Google Sign-In (P2)** - Broken, needs debugging
 
-### Free Tier
-- Manual trade logging
-- Basic dashboard & analytics
-- 1 AI report per week
-- 14-day history retention
-- **Ads shown (Banner at bottom, interstitials at transitions)**
+## Backlog / Future Features
+- Admin panel for coupon management
+- CSV trade import (not MT4/MT5)
+- Pre-trade checklist feature
+- Gamification (streaks, achievements)
+- Dark/light theme toggle
+- Push notifications for reminders
+- Multiple account/broker support
 
-### Premium ($5.99/month or $49.99/year)
-- No ads
-- Unlimited AI reports
-- Unlimited history
-- MT4/MT5 import
-- Export to CSV/PDF
-- Share via WhatsApp/Email
-
-## Prioritized Backlog
-
-### P0 (Completed)
-- [x] AdMob integration (banner + interstitial ads)
-- [x] RevenueCat integration (subscription handling)
-- [ ] Complete Google Play Store submission (needs 12 testers for 14 days)
-
-### P1 (High Priority)
-- [ ] PDF export for reports
-- [ ] Native share functionality
-- [ ] Push notifications via Firebase
-- [ ] Extended analytics (by emotion, by session)
-
-### P2 (Future)
-- [ ] Trading Rules Checklist
-- [ ] Journal Notes Page
-- [ ] Streak & Achievements
-- [ ] Instagram story format for sharing
-- [ ] Multiple account support
-- [ ] Dark/Light Theme Toggle
-
-## App Store Status
-| Platform | Status | Notes |
-|----------|--------|-------|
-| iOS App Store | Rejected (Fixing) | Rejection reasons: Apple Sign-In bug, IAP promo image, EULA link |
-| Google Play | Internal Testing | Needs 12 testers for 14 days before Production |
-
-## iOS Rejection Fixes (March 15, 2026)
-- **Guideline 2.1 (Apple Sign-In Bug)**: Fixed `handleAppleLogin()` with better error handling and logging
-- **Guideline 2.3.2 (Promotional Image)**: Created new 1024x1024 image (not a screenshot)
-- **Guideline 3.1.2 (EULA Link)**: Created static `/terms.html` and `/privacy.html` pages
-
-## Technical Notes
-- Backend URL: REACT_APP_BACKEND_URL from .env
-- Auth uses httpOnly cookies with 7-day expiry
-- Images stored in Cloudinary under user-specific folders
-- AI reports use Emergent LLM Key for GPT-5.2
-- Equity curve calculated as cumulative sum of daily P&L
-- Apple Sign-In: Bundle ID is com.ravuri.edgelog
-- Premium users bypass 14-day trade cleanup
-- AdMob Banner Ads: Show at bottom of screen for free users
-- AdMob Interstitial Ads: Show at natural break points (e.g., after closing a trade)
-- RevenueCat handles purchase flow and subscription management on native platforms
-
----
-Last Updated: March 15, 2026
+## API Endpoints
+- `POST /api/auth/session` - Exchange session_id for token
+- `POST /api/auth/apple` - Apple Sign-In verification
+- `GET /api/auth/me` - Get current user
+- `POST /api/trades` - Create trade
+- `PUT /api/trades/{trade_id}` - Update/close trade
+- `DELETE /api/trades/{trade_id}` - Delete trade
+- `GET /api/trades` - Get all trades
+- `GET /api/trades/today` - Get today's trades
+- `GET /api/analytics/summary` - Dashboard stats
+- `GET /api/analytics/daily` - Daily P&L breakdown
+- `POST /api/reports/generate` - Generate AI report
+- `GET /api/subscription/status` - Get subscription tier
+- `POST /api/coupons/apply` - Apply coupon code
+- `POST /api/import/mt4mt5` - Import MT4/MT5 trades

@@ -24,7 +24,7 @@ export default function SettingsPage({ user }) {
     // Load reminder settings
     const loadReminders = async () => {
       try {
-        const response = await authFetch('/settings/reminders';
+        const response = await authFetch('/settings/reminders');
         if (response.ok) {
           const data = await response.json();
           setReminderEnabled(data.daily_reminder_enabled || false);
@@ -38,7 +38,7 @@ export default function SettingsPage({ user }) {
     // Load subscription status
     const loadSubscription = async () => {
       try {
-        const response = await authFetch('/subscription/status';
+        const response = await authFetch('/subscription/status');
         if (response.ok) {
           const data = await response.json();
           setSubscriptionStatus(data);
@@ -225,7 +225,7 @@ export default function SettingsPage({ user }) {
                   return;
                 }
                 try {
-                  const response = await authFetch('/export/trades?format=csv';
+                  const response = await authFetch('/export/trades?format=csv');
                   if (response.ok) {
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);

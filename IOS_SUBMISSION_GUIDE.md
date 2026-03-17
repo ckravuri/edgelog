@@ -1,7 +1,7 @@
 # EdgeLog iOS App Store Resubmission Guide
 
 ## Promotional Image for IAP
-Download from: **https://trade-journal-test.preview.emergentagent.com/premium_promo_1024x1024.png**
+Download from: **https://trade-journal-app-16.preview.emergentagent.com/premium_promo_1024x1024.png**
 
 - Size: 1024x1024 pixels (PNG)
 - Use this in App Store Connect for your Premium subscription IAP
@@ -38,7 +38,7 @@ Replace the `handleAppleLogin` function (around line 140-192) with this updated 
       // The native Sign in with Apple uses the app's bundle ID automatically
       const options = {
         clientId: 'com.ravuri.edgelog',
-        redirectURI: 'https://trade-journal-test.preview.emergentagent.com',
+        redirectURI: 'https://trade-journal-app-16.preview.emergentagent.com',
         scopes: 'email name',
         state: Math.random().toString(36).substring(7),
         nonce: Math.random().toString(36).substring(7),
@@ -111,8 +111,8 @@ Replace the `handleAppleLogin` function (around line 140-192) with this updated 
 
 #### 2. Add Static Pages to `public/` folder
 Copy these files to your `public/` folder:
-- `terms.html` - Download from: https://trade-journal-test.preview.emergentagent.com/terms.html
-- `privacy.html` - Download from: https://trade-journal-test.preview.emergentagent.com/privacy.html
+- `terms.html` - Download from: https://trade-journal-app-16.preview.emergentagent.com/terms.html
+- `privacy.html` - Download from: https://trade-journal-app-16.preview.emergentagent.com/privacy.html
 
 ---
 
@@ -150,14 +150,14 @@ In Xcode:
 2. Scroll to **App Description**
 3. Add this line at the end:
    ```
-   Terms of Service: https://trade-journal-test.preview.emergentagent.com/terms.html
-   Privacy Policy: https://trade-journal-test.preview.emergentagent.com/privacy.html
+   Terms of Service: https://trade-journal-app-16.preview.emergentagent.com/terms.html
+   Privacy Policy: https://trade-journal-app-16.preview.emergentagent.com/privacy.html
    ```
 
    **OR** (Recommended):
    - Go to **App Information** → scroll to **License Agreement**
    - Select "Custom App License Agreement" 
-   - Paste the URL: `https://trade-journal-test.preview.emergentagent.com/terms.html`
+   - Paste the URL: `https://trade-journal-app-16.preview.emergentagent.com/terms.html`
 
 ### 3.2 Update IAP Promotional Image
 1. Go to **App Store Connect** → **Your App** → **Monetization** → **In-App Purchases**
@@ -165,7 +165,7 @@ In Xcode:
 3. Click **Edit** next to "Promotional Image"
 4. Delete the old screenshot image
 5. Upload the new image: `premium_promo_1024x1024.png`
-   - Download from: https://trade-journal-test.preview.emergentagent.com/premium_promo_1024x1024.png
+   - Download from: https://trade-journal-app-16.preview.emergentagent.com/premium_promo_1024x1024.png
 
 ---
 
@@ -195,9 +195,9 @@ In Xcode:
 
 ## Quick Links
 
-- **Terms of Service**: https://trade-journal-test.preview.emergentagent.com/terms.html
-- **Privacy Policy**: https://trade-journal-test.preview.emergentagent.com/privacy.html  
-- **Premium Promo Image**: https://trade-journal-test.preview.emergentagent.com/premium_promo_1024x1024.png
+- **Terms of Service**: https://trade-journal-app-16.preview.emergentagent.com/terms.html
+- **Privacy Policy**: https://trade-journal-app-16.preview.emergentagent.com/privacy.html  
+- **Premium Promo Image**: https://trade-journal-app-16.preview.emergentagent.com/premium_promo_1024x1024.png
 
 ---
 

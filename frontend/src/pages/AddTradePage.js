@@ -1,11 +1,9 @@
 import { authFetch } from "@/utils/authFetch";
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, TrendingUp, TrendingDown, X, Camera, Image, Upload, Loader2 } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, X, Camera, Loader2, Minus, DollarSign, Hash } from "lucide-react";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
-
-const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
 const COMMON_PAIRS = [
   'XAUUSD', 'EURUSD', 'GBPUSD', 'USDJPY', 'BTCUSD', 
@@ -21,6 +19,12 @@ export default function AddTradePage({ user }) {
   const [uploading, setUploading] = useState(false);
   const [showPairs, setShowPairs] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  
+  // New states for outcome and P/L
+  const [outcome, setOutcome] = useState('open'); // 'open', 'win', 'loss', 'breakeven'
+  const [pnlMode, setPnlMode] = useState('dollars'); // 'dollars' or 'points'
+  const [pnlValue, setPnlValue] = useState('');
+  const [closePrice, setClosePrice] = useState('');
   
   const [form, setForm] = useState({
     trading_pair: '',
@@ -43,27 +47,22 @@ export default function AddTradePage({ user }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
       return;
     }
 
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast.error('Image must be less than 10MB');
       return;
     }
 
-    // Show preview
     const reader = new FileReader();
     reader.onload = (e) => setPreviewImage(e.target.result);
     reader.readAsDataURL(file);
 
-    // Upload to Cloudinary
     setUploading(true);
     try {
-      // Get signature from backend
       const sigResponse = await authFetch('/cloudinary/signature?resource_type=image&folder=screenshots', {
         credentials: 'include'
       });
@@ -71,7 +70,6 @@ export default function AddTradePage({ user }) {
       if (!sigResponse.ok) throw new Error('Failed to get upload signature');
       const sig = await sigResponse.json();
 
-      // Upload to Cloudinary
       const formData = new FormData();
       formData.append('file', file);
       formData.append('api_key', sig.api_key);
@@ -114,10 +112,32 @@ export default function AddTradePage({ user }) {
       toast.error('Please fill in required fields');
       return;
     }
+
+    // Validate P/L if trade is closed
+    if (outcome !== 'open' && !pnlValue && !closePrice) {
+      toast.error('Please enter P/L or close price for closed trades');
+      return;
+    }
     
     setLoading(true);
     
     try {
+      // Calculate P/L based on mode
+      let finalPnl = null;
+      if (outcome !== 'open') {
+        if (pnlValue) {
+          finalPnl = parseFloat(pnlValue);
+          // If loss outcome and positive value entered, make it negative
+          if (outcome === 'loss' && finalPnl > 0) {
+            finalPnl = -finalPnl;
+          }
+          // If win outcome and negative value entered, make it positive
+          if (outcome === 'win' && finalPnl < 0) {
+            finalPnl = -finalPnl;
+          }
+        }
+      }
+
       const payload = {
         ...form,
         entry_price: parseFloat(form.entry_price),
@@ -137,6 +157,26 @@ export default function AddTradePage({ user }) {
       
       if (!response.ok) {
         throw new Error('Failed to create trade');
+      }
+      
+      const newTrade = await response.json();
+      
+      // If trade has an outcome (not open), update it immediately
+      if (outcome !== 'open') {
+        const updateResponse = await authFetch(`/trades/${newTrade.trade_id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            outcome: outcome,
+            close_price: closePrice ? parseFloat(closePrice) : null,
+            pnl: finalPnl
+          })
+        });
+        
+        if (!updateResponse.ok) {
+          console.warn('Failed to set trade outcome');
+        }
       }
       
       toast.success('Trade logged successfully!');
@@ -293,6 +333,162 @@ export default function AddTradePage({ user }) {
           </div>
         </div>
 
+        {/* Trade Outcome - NEW */}
+        <div className="form-group animate-fadeIn" style={{ animationDelay: '0.17s' }}>
+          <label className="form-label">Trade Status *</label>
+          <div className="grid grid-cols-4 gap-2">
+            <button
+              type="button"
+              onClick={() => setOutcome('open')}
+              className={`h-14 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${
+                outcome === 'open'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                  : 'bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20'
+              }`}
+              data-testid="outcome-open"
+            >
+              <span className="text-xs font-bold uppercase">Open</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOutcome('win')}
+              className={`h-14 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${
+                outcome === 'win'
+                  ? 'bg-green-600 text-white shadow-lg shadow-green-500/30'
+                  : 'bg-green-500/10 text-green-500 border border-green-500/30 hover:bg-green-500/20'
+              }`}
+              data-testid="outcome-win"
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase">Win</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOutcome('loss')}
+              className={`h-14 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${
+                outcome === 'loss'
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-500/30'
+                  : 'bg-red-500/10 text-red-500 border border-red-500/30 hover:bg-red-500/20'
+              }`}
+              data-testid="outcome-loss"
+            >
+              <TrendingDown className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase">Loss</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setOutcome('breakeven')}
+              className={`h-14 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${
+                outcome === 'breakeven'
+                  ? 'bg-zinc-600 text-white shadow-lg shadow-zinc-500/30'
+                  : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/30 hover:bg-zinc-500/20'
+              }`}
+              data-testid="outcome-breakeven"
+            >
+              <Minus className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase">B/E</span>
+            </button>
+          </div>
+        </div>
+
+        {/* P/L Entry - Only show when trade is closed */}
+        {outcome !== 'open' && (
+          <div className="form-group animate-fadeIn bg-zinc-900/50 p-4 rounded-lg border border-white/5" style={{ animationDelay: '0.18s' }}>
+            <div className="flex items-center justify-between mb-3">
+              <label className="form-label !mb-0">P/L (Profit/Loss)</label>
+              {/* Toggle between dollars and points */}
+              <div className="flex items-center bg-zinc-800 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setPnlMode('dollars')}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                    pnlMode === 'dollars'
+                      ? 'bg-green-500 text-black'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                  data-testid="pnl-mode-dollars"
+                >
+                  <DollarSign className="w-3 h-3" />
+                  Dollars
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPnlMode('points')}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                    pnlMode === 'points'
+                      ? 'bg-green-500 text-black'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                  data-testid="pnl-mode-points"
+                >
+                  <Hash className="w-3 h-3" />
+                  Points
+                </button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-zinc-500 mb-1 block">
+                  {pnlMode === 'dollars' ? 'Amount ($)' : 'Points/Pips'}
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={pnlValue}
+                  onChange={(e) => setPnlValue(e.target.value)}
+                  placeholder={outcome === 'win' ? '+0.00' : outcome === 'loss' ? '-0.00' : '0.00'}
+                  className={`form-input font-mono ${
+                    outcome === 'win' ? 'text-green-500 border-green-500/30' : 
+                    outcome === 'loss' ? 'text-red-500 border-red-500/30' : ''
+                  }`}
+                  data-testid="pnl-input"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-500 mb-1 block">Close Price (optional)</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={closePrice}
+                  onChange={(e) => setClosePrice(e.target.value)}
+                  placeholder={form.entry_price || '0.00'}
+                  className="form-input font-mono"
+                  data-testid="close-price-input"
+                />
+              </div>
+            </div>
+            
+            {/* Quick P/L buttons */}
+            <div className="mt-3">
+              <label className="text-xs text-zinc-500 mb-2 block">Quick {pnlMode === 'dollars' ? 'P/L' : 'Points'}</label>
+              <div className="flex gap-2 flex-wrap">
+                {(pnlMode === 'dollars' 
+                  ? ["-100", "-50", "-25", "+25", "+50", "+100", "+200"]
+                  : ["-50", "-25", "-10", "+10", "+25", "+50", "+100"]
+                ).map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => {
+                      setPnlValue(val.replace("+", ""));
+                      if (val.startsWith("-") && outcome !== 'loss') setOutcome('loss');
+                      if (val.startsWith("+") && outcome !== 'win') setOutcome('win');
+                    }}
+                    className={`px-3 py-1.5 rounded text-xs font-mono transition-colors ${
+                      val.startsWith("-")
+                        ? "bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                        : "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+                    }`}
+                  >
+                    {val}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Date/Time */}
         <div className="form-group animate-fadeIn" style={{ animationDelay: '0.2s' }}>
           <label className="form-label">Trade Date & Time *</label>
@@ -305,7 +501,7 @@ export default function AddTradePage({ user }) {
           />
         </div>
 
-        {/* Screenshot Upload - NEW */}
+        {/* Screenshot Upload */}
         <div className="form-group animate-fadeIn" style={{ animationDelay: '0.22s' }}>
           <label className="form-label">Trade Screenshot</label>
           <input
@@ -402,13 +598,20 @@ export default function AddTradePage({ user }) {
           type="submit"
           disabled={loading || uploading}
           className={`w-full h-14 rounded font-heading text-lg font-bold uppercase tracking-wider transition-all ${
-            form.trade_type === 'buy'
+            outcome === 'win'
+              ? 'bg-green-600 hover:bg-green-500 text-white buy-glow'
+              : outcome === 'loss'
+              ? 'bg-red-600 hover:bg-red-500 text-white sell-glow'
+              : form.trade_type === 'buy'
               ? 'bg-green-600 hover:bg-green-500 text-white buy-glow'
               : 'bg-red-600 hover:bg-red-500 text-white sell-glow'
           } disabled:opacity-50 disabled:cursor-not-allowed`}
           data-testid="submit-trade-btn"
         >
-          {loading ? 'Logging...' : `Log ${form.trade_type.toUpperCase()} Trade`}
+          {loading ? 'Logging...' : outcome === 'open' 
+            ? `Log ${form.trade_type.toUpperCase()} Trade`
+            : `Log ${outcome.toUpperCase()} Trade`
+          }
         </button>
       </form>
 
