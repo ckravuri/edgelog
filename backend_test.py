@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 import json
 
 # Test configuration
-BASE_URL = "https://trade-journal-app-16.preview.emergentagent.com/api"
+BASE_URL = "https://edgelog-staging-3.preview.emergentagent.com/api"
 SESSION_TOKEN = "test_session_1771146088181"  # From agent context note
 USER_ID = "test-user-1771146088181"  # From agent context note
 

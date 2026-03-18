@@ -1,115 +1,89 @@
 <analysis>**original_problem_statement:**
-The user requested the creation of a cross-platform mobile app named EdgeLog for trade journaling.
+The user wants to build a cross-platform mobile app named EdgeLog for trade journaling.
 
 **PRODUCT REQUIREMENTS:**
 -   **App Type:** Cross-platform mobile app (iOS & Android) using React/Capacitor.
 -   **Authentication:** Mandatory Google Sign-In and Apple Sign-In.
--   **Core Feature:** Manual entry of trades with fields like Trading Pair, Prices, Lot Size, and notes.
--   **Analytics:** Dashboard showing daily trade count, Win/Loss ratio, Average Risk-Reward, and an equity curve.
--   **Monetization (New):**
+-   **Core Feature:** Manual entry of trades with fields like Trading Pair, Prices, Lot Size, and notes. The user has also requested the ability to specify the trade outcome (win/loss/open) and the P/L in either dollars or points upon closing a trade.
+-   **Analytics:** Dashboard showing daily trade count, Win/Loss ratio, Average Risk-Reward, an equity curve, and performance broken down by trading pair.
+-   **Monetization:**
     -   **Free Tier:** Ad-supported (AdMob), 14-day trade history limit, 1 AI report/week.
     -   **Premium Tier (.99/month):** No ads, unlimited history, unlimited AI reports, MT4/MT5 report import, export to Excel/PDF, share reports.
-    -   **Trial:** 7-day free premium trial for all new users.
-    -   **Coupons:** Ability for admins to create discount/trial coupons.
--   **Screens:** Home, Add Trade, Dashboard, Settings/Profile, Premium/Paywall, Report Import.
 -   **Deployment:** Submit to both Apple App Store and Google Play Store.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The project is a full-stack PWA with a React/Capacitor frontend and a FastAPI backend. A significant portion of the recent work involved an exhaustive and frustrating process of debugging the user's local Android build environment, which is highly unstable. This involved resolving numerous dependency conflicts, Gradle errors, SDK corruption, and Node.js version issues.
+The project is a full-stack PWA (React/Capacitor frontend, FastAPI backend). The previous agent provided the user with complete code for five updated files (, , , , ) to fix numerous bugs related to authentication, trade logging, and subscriptions.
 
-An Android build (version 14) was successfully submitted to the Play Store, but the Google Sign-In flow was broken. Subsequent attempts to fix this have been hampered by the unstable build environment. To simplify the build process, the monetization plugins (AdMob, RevenueCat) were temporarily removed.
-
-The user has now shifted focus to a new set of rejection feedback received from the Apple App Store for the iOS version of the app.
+The user updated their RevenueCat and App Store Connect configurations and submitted the app for review. The app was rejected by Apple. The agent identified that the rejection was due to the submitted build using a temporary, non-production preview URL, which was not always active for the reviewers. To resolve this, the agent initiated the deployment process to obtain a stable, permanent URL for the backend.
 
 **Last working item**:
--   **Last item agent was working:** The agent was about to start addressing the rejection feedback from the Apple App Store review. The user had just pasted the comments from Apple. The previous work involved a long and difficult process of trying to fix the Android Google Sign-In flow, which was ultimately unsuccessful despite generating multiple new APKs for the user to test.
--   **Status:** NOT STARTED (on the iOS issues). The Android login issue is IN PROGRESS but has been paused by the user.
+-   **Last item agent was working:** The agent was in the process of deploying the application to a permanent, stable environment to resolve an Apple App Store rejection. The rejection was caused by the app using a temporary preview URL that was not always online for the Apple review team.
+-   **Status:** IN PROGRESS
 -   **Agent Testing Done:** N
--   **Which testing method agent to use?** After fixing the iOS issues, the agent should guide the user to create a new iOS build and submit it to Apple for review. Manual testing by the user on an iPhone is required.
--   **User Testing Done:** Y (User confirmed the latest Android build's login flow is still broken. User also provided the new iOS rejection feedback.)
+-   **Which testing method agent to use?** After deployment is complete, the next agent must guide the user to rebuild the iOS app with the new stable backend URL. Then, the user needs to perform manual testing on their iPad using a Sandbox account to verify the entire login and subscription flow.
+-   **User Testing Done:** N (User is waiting for a stable build to test).
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Apple App Store Rejection (P0)**
--   **Issue 2: Android Google Sign-In Fails (P1)**
--   **Issue 3: Fragile Android Build Environment (P1)**
--   **Issue 4: Re-integrate Monetization Plugins (AdMob, RevenueCat) (P2)**
--   **Issue 5: Finalize Google Play Store Submission (P2)**
+-   **Issue 1: App Store Rejection and Deployment (P0)**
+-   **Issue 2: Subscription flow not fully verified on a real device (P1)**
+-   **Issue 3: Homepage and Analytics data correctness (P2)**
+-   **Issue 4: Android Google Sign-In is broken (P2)**
 
 **Issues Detail:**
--   **Issue 1: Apple App Store Rejection (P0)**
-    -   **Description:** Apple rejected the app for three reasons:
-        1.  **Guideline 2.1:** A bug where Sign in with Apple shows an error.
-        2.  **Guideline 2.3.2:** The promotional image for an in-app purchase is just a screenshot with small text.
-        3.  **Guideline 3.1.2:** A functional link to the Terms of Use (EULA) is missing from the App Store metadata.
-    -   **Attempted fixes:** None yet. The agent was just about to start investigating.
+-   **Issue 1: App Store Rejection and Deployment (P0)**
+    -   **Attempted fixes:** The agent correctly identified the root cause of the rejection (using a temporary preview URL). The agent then called the  to start the deployment process to get a stable production URL.
     -   **Next debug checklist:**
-        1.  **(2.1 - Apple Sign-In Bug):** Investigate the Apple Sign-In implementation in  and the related  plugin. Check for errors in the authentication flow specific to the iOS environment.
-        2.  **(2.3.2 - Promotional Image):** Guide the user to create a new, more descriptive promotional image for the IAP that is not a direct screenshot and has clear, readable text, then upload it in App Store Connect.
-        3.  **(3.1.2 - EULA Link):** Instruct the user to add a functional link to their Terms of Use (EULA) in the App Description field within their app's page on App Store Connect.
-    -   **Why fix this issue and what will be achieved with the fix?** Resolving these issues is mandatory for the app to be approved and published on the Apple App Store.
+        1.  Analyze the output from the  and complete the deployment.
+        2.  Obtain the new, stable production URL.
+        3.  Instruct the user to update the  in  and the  constant in  with the new stable URL.
+        4.  Confirm the user has applied all 5 of the provided code fixes.
+        5.  Guide the user to perform a clean rebuild and test on their iPad.
+    -   **Why fix this issue and what will be achieved with the fix?** A stable, deployed backend is required to pass the App Store review and have a functional production app.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** both
+    -   **Blocked on other issue:** None. This is the primary blocker.
+
+-   **Issue 2: Subscription flow not fully verified on a real device (P1)**
+    -   **Description:** After fixing all the configuration issues in RevenueCat and App Store Connect, the user still gets an unable to load subscription options error. The IAPs are in Waiting for Review status. This is likely due to either a time delay for Apple's servers to propagate the IAP availability to the Sandbox environment or a final configuration mismatch.
+    -   **Attempted fixes:** The agent provided robust code fixes for all RevenueCat-related files and guided the user through the complex App Store Connect setup.
+    -   **Next debug checklist:**
+        1.  After the app is rebuilt with the stable URL (from Issue 1), instruct the user to re-test on their iPad.
+        2.  The user MUST be signed into their Sandbox Tester account under **iPad Settings > App Store > Sandbox Account**.
+        3.  Instruct the user to do a fresh install (delete the old app first).
+        4.  If it still fails, check the Xcode console logs for  messages.
+    -   **Why fix this issue and what will be achieved with the fix?** This is critical for the app's monetization.
+    -   **Status:** BLOCKED
+    -   **Is recurring issue?** Y
+    -   **Should Test frontend/backend/both after fix?** frontend
+    -   **Blocked on other issue:** Issue 1: App Store Rejection and Deployment
+
+-   **Issue 3: Homepage and Analytics data correctness (P2)**
+    -   **Description:** The initial handoff mentioned that the homepage and analytics dashboards were not updating correctly after a trade was closed.
+    -   **Attempted fixes:** Many  calls were fixed, which may have resolved this issue, but it has not been re-verified.
+    -   **Next debug checklist:** After the login and add/edit trade flows are working, the user needs to verify that the dashboard analytics (Total P/L, Win Rate) update correctly.
     -   **Status:** NOT STARTED
-    -   **Is recurring issue?** Y (The app has been rejected before for different reasons).
-    -   **Should Test frontend/backend/both after fix?** frontend
-    -   **Blocked on other issue:** None. This is the new top priority.
-
--   **Issue 2: Android Google Sign-In Fails (P1)**
-    -   **Description:** After a successful build and install, the Google Sign-in flow fails. The user is taken to the Google login, authenticates, sees a success screen for a moment, and is then returned to the app's login page instead of being logged in.
-    -   **Attempted fixes:** Numerous attempts, including: using a backend callback, redirecting to the root URL, using a static HTML callback page, implementing deep links (), and finally, a server-side polling mechanism to pass the auth token. None have worked on the user's device.
-    -   **Next debug checklist:**
-        1.  Once iOS issues are resolved, pivot back to this.
-        2.  The most robust solution attempted was the server-side token polling. The primary suspect is that the user's local build process is not correctly packaging the latest frontend code (, ) into the APK.
-        3.  Guide the user to get  output from their device while reproducing the sign-in failure. This will provide critical logs about network requests and potential JavaScript errors.
-    -   **Why fix this issue and what will be achieved with the fix?** The app is unusable on Android without a working login. This blocks testing and release.
-    -   **Status:** IN PROGRESS
     -   **Is recurring issue?** Y
     -   **Should Test frontend/backend/both after fix?** frontend
-    -   **Blocked on other issue:** Blocked by user's focus on Issue 1.
+    -   **Blocked on other issue:** None
 
--   **Issue 3: Fragile Android Build Environment (P1)**
-    -   **Description:** The user's local environment (M2 Mac) is extremely unstable. Building for Android has been a series of cascading failures involving Node.js versions (v25 vs v18), npm vs. yarn, corrupted Gradle caches, incompatible Android Gradle Plugin (AGP) versions, incorrect Java versions (JDK 21 vs 17), and corrupted Android SDK platforms.
-    -   **Attempted fixes:** A huge number of trial-and-error fixes, including switching Node versions with , using  and , manually deleting caches, and changing Gradle/plugin versions. The latest working configuration involves a complex set of specific versions for Gradle, AGP, Kotlin, and dependencies, plus setting the Gradle JDK to 17 in Android Studio.
-    -   **Next debug checklist:**
-        1.  **Do not regenerate the  folder.** This action wipes all the hard-won configuration fixes.
-        2.  **Standardize and document the build process.** Create a shell script () that codifies the environment setup (e.g., ), cleanup (), and build commands (, ) to ensure consistency.
-        3.  Strongly recommend the user to **only use Android Studio for building APKs/AABs**, as it seems to handle the M2/JDK incompatibilities better than the command line.
-    -   **Why fix this issue and what will be achieved with the fix?** A stable build process is essential for any future development or bug fixing on Android. Resolving this will save significant time and user frustration.
-    -   **Status:** IN PROGRESS
-    -   **Is recurring issue?** Y
-    -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on other issue:** None. This is a persistent, underlying problem.
-
--   **Issue 4: Re-integrate Monetization Plugins (AdMob, RevenueCat) (P2)**
-    -   **Description:** The  and  plugins were uninstalled to resolve a build-breaking conflict related to incompatible Kotlin/Java versions.
-    -   **Attempted fixes:** The plugins were removed as a workaround.
-    -   **Next debug checklist:**
-        1.  After the Android login works and the build is stable, plan a proper integration.
-        2.  This will likely require updating all Capacitor plugins to their latest major versions to ensure compatibility.
-        3.  This may also require upgrading the project to a newer Android Gradle Plugin and setting the JDK target to 21, which was the original cause of the conflict. This should be treated as a significant refactoring task.
-    -   **Why fix this issue and what will be achieved with the fix?** The app's business model depends on these features.
-    -   **Status:** BLOCKED
-    -   **Is recurring issue?** N
-    -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on other issue:** Issue 2 and Issue 3.
-
--   **Issue 5: Finalize Google Play Store Submission (P2)**
-    -   **Description:** The app requires a 14-day closed test with active testers.
-    -   **Attempted fixes:** A build was submitted, but it was not functional.
-    -   **Next debug checklist:** Provide testers with a working build.
-    -   **Why fix this issue and what will be achieved with the fix?** This is the final gate before the app can go live on the Play Store.
-    -   **Status:** BLOCKED
+-   **Issue 4: Android Google Sign-In is broken (P2)**
+    -   **Description:** This is a known issue from the initial handoff that has not been addressed.
+    -   **Next debug checklist:** Once the iOS version is stable and approved, investigate the Android-specific Google Sign-In flow.
+    -   **Status:** NOT STARTED
     -   **Is recurring issue?** N
     -   **Should Test frontend/backend/both after fix?** frontend
-    -   **Blocked on other issue:** Issue 2.
+    -   **Blocked on other issue:** None
 
 **In progress Task List**:
--   **Task 1: Complete Monetization Implementation (P2)**
-    -   **Where to resume:** The plugins were removed. They need to be re-installed and configured correctly once the build environment is stable.
-    -   **What will be achieved with this?** Enable the app's freemium business model.
-    -   **Status:** BLOCKED
+-   **Task 1: Complete application deployment (P0)**
+    -   **Where to resume:** The previous agent has already called the . The next agent needs to analyze the response and complete the deployment process.
+    -   **What will be achieved with this?** A permanent, always-on backend URL, which is a prerequisite for a production app and for passing the App Store review.
+    -   **Status:** IN PROGRESS
     -   **Should Test frontend/backend/both after fix?** both
-    -   **Blocked on something:** Issue 2: Android Google Sign-In Fails, Issue 3: Fragile Android Build Environment.
+    -   **Blocked on something:** None.
 
 **Upcoming and Future Tasks**
 -   **Upcoming Tasks:**
@@ -123,113 +97,95 @@ The user has now shifted focus to a new set of rejection feedback received from 
     -   A dark/light theme toggle.
 
 **Completed work in this session**
--   Attempted to fix Android build failures through an extensive debugging process involving Node versions, npm dependencies, Gradle, AGP, and Android SDKs.
--   Successfully guided the user to regenerate a clean Android project using Capacitor CLI.
--   Guided the user through re-configuring the entire Android project from scratch, including icons, , and multiple  files.
--   Identified and temporarily removed monetization plugins (, ) that were causing build-breaking Java/Kotlin version conflicts.
--   Successfully guided the user to build a debug APK after numerous failures.
--   Iterated through multiple solutions for the native Google Sign-In flow, including backend callbacks, deep links, and finally a server-side token polling mechanism.
--   The user has now pivoted to new iOS App Store rejection feedback.
-
-**Earlier issues found/mentioned but not fixed**
--   The root cause of the unstable Android environment (M2 Mac + complex dependency matrix) is still present, even though workarounds were found to produce a build.
-
-**Known issue recurrence from previous fork**
--   **Issue recurrence in previous fork:** The user's local Android build environment is extremely fragile. This session was dominated by a chain reaction of Gradle, AGP, Java, and Node version conflicts.
--   **Recurrence count:** High (10+ cycles of build-fail-fix in this session).
--   **Status:** IN PROGRESS (The environment is not stable).
+-   **Authentication:**
+    -   Fixed  calls across multiple pages (, , etc.) by correcting syntax errors.
+    -   Fixed the user logout and reminder-setting functionalities.
+    -   Vastly improved the UI/UX of the  page for the Google Sign-in flow on iOS.
+-   **Core Features:**
+    -   Implemented a new  with trade outcome selection (Win/Loss/Open) and a P/L toggle (Dollars/Points).
+    -   Fixed the Failed to log trade error by rewriting the  function in  with a cleaner payload and better error handling.
+    -   Fixed the Export Trades function in  to be more robust for iOS using the Share API.
+-   **Monetization (RevenueCat):**
+    -   Guided the user to fix their App Store Connect IAP configuration by generating and uploading the required  key file.
+    -   Provided completely rewritten  and  files with correct product IDs, better error handling, and improved logging.
+-   **Deployment:**
+    -   Diagnosed that the App Store rejection was caused by using a temporary preview URL.
+    -   Initiated the deployment process to get a stable, production-ready URL.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **Frontend:** React, Tailwind CSS, Capacitor
+-   **Frontend:** React, Tailwind CSS, Capacitor, Recharts
 -   **Backend:** Python (FastAPI)
 -   **Database:** MongoDB
--   **Native Build Systems:** Android (Gradle, AGP, Android Studio), iOS (Xcode)
--   **Dependency Management:** Node.js (npm, nvm), Gradle dependencies
--   **Authentication:** Emergent-managed Google Auth, Sign in with Apple, OAuth 2.0 redirect flows for native apps.
+-   **Native Auth:**  + Bearer Token for session management.
+-   **Native Build:** Capacitor, Xcode, CocoaPods.
+-   **Monetization:** RevenueCat, Google AdMob. The main challenge is the complex configuration between the app, RevenueCat, and App Store Connect, particularly for Sandbox testing.
 
 **key DB schema**
--   **native_auth_tokens**:  (New temporary collection for the polling auth flow)
+-   **native_auth_tokens**: 
 -   **users**: 
 -   **trades**: 
 -   **coupons**: 
 
 **changes in tech stack**
--    and  were **temporarily uninstalled** to fix build issues.
--    was installed to handle deep linking.
+- No changes in the tech stack itself, but significant improvements were made to the implementation patterns for authentication, trade submission, and in-app purchases.
 
 **All files of reference**
--   : Manually configured AGP, Kotlin plugin, and dependency resolution strategies.
--   : Manually set to use Gradle 8.5.
--   : Manually set  and .
--   : Manually configured with deep link intent filters.
--   : Contains the complex logic for handling native Google Sign-In.
--   : Contains logic to handle the auth token after a deep link or redirect.
--   : New static HTML page to handle the browser-side of the auth flow.
--   : Shows the current state of dependencies.
--   : Contains the new server-side polling endpoints (, ).
--   Files edited in  (e.g., ): These are temporary patches that will be overwritten on .
-
-**Areas that need refactoring**:
--   The entire Android build configuration needs to be stabilized. A proper upgrade of all Capacitor plugins, AGP, and Gradle should be planned to correctly support monetization features without manual patches.
--   The native authentication flow has been through many iterations and could be simplified if the underlying build issues are resolved.
-
-**key api endpoints**
--   : Stores a session token against a unique request ID.
--   : Retrieves a session token using a request ID.
+-   : Updated with a much-improved UI to guide the user to close the Google Sign-In browser window.
+-   : Completely replaced with a new version that includes outcome selection and a P/L toggle, and fixes the submission bug.
+-   : Completely replaced with a version that fixes logout, reminders, and the trade export flow for iOS.
+-   : Completely replaced to use the user's specific product IDs and add robust logging and error handling.
+-   : Updated to include a retry mechanism for loading offerings and better initialization logic.
+-   : The  endpoint was updated to work with Bearer tokens instead of cookies.
 
 **Critical Info for New Agent**
--   **USER IS EXTREMELY FRUSTRATED:** The user has been through a very long and repetitive debugging cycle for the Android build. Be direct, avoid circular suggestions, and acknowledge the difficulty. Do not suggest  or regenerating the project unless absolutely necessary, as it wipes out all configuration.
--   **NEW PRIORITY IS IOS:** The user has explicitly shifted focus to the Apple App Store rejection. Address these three points first before returning to Android.
--   **ANDROID BUILD IS A MINEFIELD:** The user is on an M2 Mac. The build only works with a very specific combination of Node 18, Gradle 8.5, AGP 8.2.0, and Gradle JDK 17 set in Android Studio. Any deviation will likely cause a cascade of errors. The monetization plugins were removed to get a build to succeed.
--   **ANDROID LOGIN IS BROKEN:** The latest issue is that the Google login flow returns to the login page. The last attempted fix involved a server-side polling mechanism. Debugging this will require .
+-   **The app was rejected by Apple.** The number one priority is to finish the deployment, get the stable URL, and guide the user to rebuild their app with that URL and all the provided code fixes before resubmitting.
+-   **The user is frustrated.** Be direct and focus on the clear plan: Deploy -> Update URL -> Rebuild -> Test -> Resubmit. Acknowledge the user's previous struggles and show confidence in the current plan.
+-   **Confirm all 5 files have been updated.** Before the user rebuilds, it's crucial to verify they have manually copied all 5 new files provided by the previous agent.
+-   **Sandbox testing is key.** The Offerings not loaded error is a configuration/timing issue. The user must be signed into a Sandbox account on their iPad's settings to test IAPs. The products in App Store Connect are now Waiting for Review, so Sandbox testing should work after a propagation delay.
 
 **documents and test reports created in this job**
--   None.
+None.
 
 **Last 10 User Messages and any pending HUMAN messages**
-10. **User:** lets focus on ios app version and got review comments from apple...i will pase the apple review comments below (New Priority, Pending Action)
-9.  **User:** this is the error from android studio only....also if i upgrade to M5 will these issues go away? as i am planning to buy (Frustration, Pending Fix)
-8.  **User:** unable to generate APK file error from Android Studio. (Pending Fix)
-7.  **User:** Reports  command was successful. (Complete)
-6.  **User:** Asks which JDK 17 version to use from a screenshot. (Complete)
-5.  **User:** Reports  when trying to resize icons. (Complete)
-4.  **User:** terminal work is success now tell me each steps mipmap and rest of the items (Request for next steps, Complete)
-3.  **User:** Reports build is successful after setting Node.js 18 as default and reinstalling dependencies. (Complete)
-2.  **User:** Reports v20.20.0 shows v25.6.1 again. (Pending Fix, Addressed by setting default)
-1.  **User:** Reports build failure  even after switching to Node 18. (Pending Fix, Addressed by reinstalling modules)
+10. The user confirms they have submitted the app for review and the IAPs are Waiting for Review, but they still get the same subscription error on their iPad.
+9. Agent asks for the current product status in App Store Connect and for a bundle ID check.
+8. User confirms product status is Waiting for Review and all bundle IDs match.
+7. Agent suspects RevenueCat Offerings setup and asks for a screenshot.
+6. User asks if a Paywall is needed in RevenueCat.
+5. Agent confirms a paywall is not needed and asks if Packages are added to the offering.
+4. User confirms packages are already created and provides a screenshot.
+3. Agent suspects a propagation delay in App Store Connect and advises waiting 30 minutes before re-testing.
+2. User confirms they will wait and test again.
+1. **User reports that the app was rejected by Apple** with screenshots showing a login error and a Spinning up Servers page.
 
 **Project Health Check:**
 -   **Broken:**
-    -   Android Google Sign-In flow.
-    -   Apple Sign-In flow (per App Store rejection).
-    -   The stability of the entire Android build environment.
+    -   **Production Viability:** The app is not production-ready as it was submitted with a temporary preview URL.
+    -   **Subscription Flow:** The end-to-end purchase flow is not working, blocked by a configuration issue between App Store Connect and the Sandbox environment.
 -   **Mocked:**
     -   MT4/MT5 Report Import endpoint.
-    -   Export to Excel endpoint.
--   **Temporarily Removed:**
-    -   AdMob and RevenueCat monetization features were uninstalled to allow the Android build to succeed.
 
 **3rd Party Integrations**
--   **Emergent-managed Google Auth:** Integrated, but broken on Android native app.
--   **Sign in with Apple:** Integrated, but bug reported by Apple review.
+-   **Emergent-managed Google Auth:** Integrated.
+-   **Sign in with Apple:** Integrated.
 -   **Cloudinary (Image Storage):** Integrated.
 -   **OpenAI:** Integrated.
--   **Google AdMob:** Temporarily uninstalled due to build conflicts.
--   **RevenueCat:** Temporarily uninstalled due to build conflicts.
--   **Capacitor Browser:** Integrated.
--   **Capacitor App:** Integrated.
+-   **Google AdMob:** Integrated.
+-   **RevenueCat:** Integrated, but currently not loading offerings on the device.
+-   **Capacitor:** Core of the native build.
 
 **Testing status**
 -   **Testing agent used after significant changes:** NO
 -   **Troubleshoot agent used after agent stuck in loop:** NO
 -   **Test files created:** []
--   **Known regressions:** Monetization features (AdMob, RevenueCat) have been uninstalled as a workaround for build issues.
+-   **Known regressions:** None from this session; this session was focused on fixing regressions from the previous one.
 
 **Credentials to test flow:**
--   **Authentication:** Use the Google Sign-In flow for web/Android. Use Sign in with Apple for iOS.
+-   **Authentication:** Use the Google Sign-In or Apple Sign-In flow on a real iOS device.
+-   **In-App Purchases:** A Sandbox Tester account (created in App Store Connect) must be used. The user needs to sign into this account via **iPad Settings > App Store > Sandbox Account**.
 
 **What agent forgot to execute**
--   The agent fell into a deep and repetitive debugging loop with the user's local Android environment. A more systematic approach to solving the M2 Mac/Gradle/JDK compatibility issues should have been taken earlier. Instead of fixing one-off errors, a planned upgrade/alignment of AGP, Gradle, and forcing Java versions would have been more effective. The decision to remove monetization plugins was a valid get it working strategy but represents a functional regression that needs to be tracked and resolved. The agent also did not create a script to automate the complex build steps for the user, leading to repeated manual errors.</analysis>
+- The agent was in the middle of executing the deployment flow when the session ended. The next agent must pick up from the result of the  call.</analysis>

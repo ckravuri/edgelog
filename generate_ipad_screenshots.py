@@ -1,7 +1,7 @@
 import asyncio
 from playwright.async_api import async_playwright
 
-BASE_URL = "https://trade-journal-app-16.preview.emergentagent.com"
+BASE_URL = "https://edgelog-staging-3.preview.emergentagent.com"
 OUTPUT_DIR = "/app/frontend/public/screenshots"
 
 # iPad Pro 12.9" dimensions (2048 × 2732) - we'll use device scale factor

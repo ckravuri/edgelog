@@ -149,7 +149,7 @@ Click **"Get Started"** and answer:
 
 **Privacy Policy URL**: 
 ```
-https://trade-journal-app-16.preview.emergentagent.com/privacy
+https://edgelog-staging-3.preview.emergentagent.com/privacy
 ```
 (Replace with your production URL after deployment)
 
