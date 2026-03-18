@@ -4,6 +4,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { User, Bell, Shield, LogOut, ChevronRight, Clock, FileText, Crown, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 
 const API = process.env.REACT_APP_BACKEND_URL + "/api";
 
@@ -239,7 +242,48 @@ export default function SettingsPage({ user }) {
                   const blob = await response.blob();
                   const filename = `edgelog_trades_${new Date().toISOString().slice(0,10)}.csv`;
                   
-                  // Check if Web Share API is available (works on iOS Safari)
+                  // Check if running on native platform (iOS/Android)
+                  if (Capacitor.isNativePlatform()) {
+                    try {
+                      // Convert blob to base64
+                      const reader = new FileReader();
+                      const base64Promise = new Promise((resolve, reject) => {
+                        reader.onloadend = () => {
+                          const base64 = reader.result.split(',')[1];
+                          resolve(base64);
+                        };
+                        reader.onerror = reject;
+                      });
+                      reader.readAsDataURL(blob);
+                      const base64Data = await base64Promise;
+                      
+                      // Write file to device
+                      const writeResult = await Filesystem.writeFile({
+                        path: filename,
+                        data: base64Data,
+                        directory: Directory.Cache,
+                      });
+                      
+                      console.log('File written to:', writeResult.uri);
+                      
+                      // Share the file
+                      await Share.share({
+                        title: 'EdgeLog Trades Export',
+                        text: 'My trading journal export',
+                        url: writeResult.uri,
+                        dialogTitle: 'Share your trades export',
+                      });
+                      
+                      toast.dismiss();
+                      toast.success('Export ready!');
+                      return;
+                    } catch (nativeError) {
+                      console.error('Native export error:', nativeError);
+                      // Fall through to web fallback
+                    }
+                  }
+                  
+                  // Web fallback: Check if Web Share API is available
                   if (navigator.share && navigator.canShare) {
                     const file = new File([blob], filename, { type: 'text/csv' });
                     
@@ -254,7 +298,7 @@ export default function SettingsPage({ user }) {
                     }
                   }
                   
-                  // Fallback: Create download link
+                  // Final fallback: Create download link
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
