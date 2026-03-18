@@ -99,12 +99,18 @@ export default function SettingsPage({ user }) {
         method: 'POST',
         credentials: 'include'
       });
-      navigate('/login', { replace: true });
     } catch (error) {
-      toast.error('Failed to logout');
-    } finally {
-      setLoading(false);
+      console.error('Logout API error:', error);
+      // Continue with local logout even if API fails
     }
+    
+    // Always clear local storage and cookies
+    localStorage.removeItem('session_token');
+    sessionStorage.removeItem('edgelog_user');
+    document.cookie = 'session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    
+    setLoading(false);
+    navigate('/login', { replace: true });
   };
 
   return (
