@@ -162,9 +162,37 @@
         const urlParams = new URLSearchParams(window.location.search);
         const authRequestId = urlParams.get('auth_request_id');
         
-        // Detect platform
-        const isAndroid = /android/i.test(navigator.userAgent);
-        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+        // Detect platform - be more inclusive for Android detection
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isAndroid = userAgent.includes('android');
+        const isIOS = /iphone|ipad|ipod/i.test(userAgent) && !isAndroid;
+        
+        // Debug: show detected platform
+        console.log('User Agent:', userAgent);
+        console.log('Is Android:', isAndroid);
+        console.log('Is iOS:', isIOS);
+        
+        // Function to try opening the app via deep link
+        function tryOpenApp(authRequestId) {
+            const deepLink = `edgelog://auth?auth_request_id=${authRequestId}&status=success`;
+            
+            // Method 1: Create a hidden iframe (works in some browsers)
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLink;
+            document.body.appendChild(iframe);
+            
+            // Method 2: Try direct location change after a delay
+            setTimeout(() => {
+                window.location.href = deepLink;
+            }, 100);
+            
+            // Method 3: Try intent URL for Chrome-based browsers
+            setTimeout(() => {
+                const intentUrl = `intent://auth?auth_request_id=${authRequestId}&status=success#Intent;scheme=edgelog;package=com.ravuri.edgelog;end`;
+                window.location.href = intentUrl;
+            }, 300);
+        }
         
         async function processAuth() {
             try {
@@ -208,34 +236,23 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('success').style.display = 'block';
                 
-                // For Android: Try to redirect back to app using deep link
+                // For Android: Try to redirect back to app
                 if (isAndroid && authRequestId) {
+                    console.log('Android detected - attempting deep link');
                     document.querySelector('.instruction-text').innerHTML = 
-                        'Authentication successful!<br><strong>Returning to app...</strong>';
+                        'Authentication successful!<br><strong>Opening EdgeLog app...</strong>';
                     
-                    // Try deep link redirect after a short delay
+                    // Try to open the app after a short delay
                     setTimeout(() => {
-                        // Use Android Intent URL format for more reliable deep linking
-                        const intentUrl = `intent://auth?auth_request_id=${authRequestId}&status=success#Intent;scheme=edgelog;package=com.ravuri.edgelog;end`;
-                        const fallbackDeepLink = `edgelog://auth?auth_request_id=${authRequestId}&status=success`;
+                        tryOpenApp(authRequestId);
                         
-                        console.log('Attempting Android Intent URL:', intentUrl);
-                        
-                        // Try Intent URL first (works better in Chrome)
-                        window.location.href = intentUrl;
-                        
-                        // Fallback: try regular deep link after 500ms
-                        setTimeout(() => {
-                            console.log('Trying fallback deep link:', fallbackDeepLink);
-                            window.location.href = fallbackDeepLink;
-                        }, 500);
-                        
-                        // If deep link doesn't work after 3 seconds, show manual close instruction
+                        // After 2 seconds, update the message with manual instructions
                         setTimeout(() => {
                             document.querySelector('.instruction-text').innerHTML = 
-                                'Authentication successful!<br><strong>You can close this window</strong><br>or tap the back button.';
-                        }, 3000);
-                    }, 1000);
+                                'Login successful!<br><br><strong>Tap the X or ← button</strong><br>to return to the app';
+                        }, 2000);
+                    }, 500);
+                    return; // Don't run iOS block
                 }
                 
                 // For iOS: Show close instruction
