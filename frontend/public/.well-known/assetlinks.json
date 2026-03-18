@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.ravuri.edgelog",
+      "sha256_cert_fingerprints": [
+        "6B:AA:80:2E:74:FB:BA:FD:7B:9E:5F:B4:E6:4B:8B:E8:22:42:2A:F4:33:3D:B2:E5:54:92:83:11:0A:5E:15:11"
+      ]
+    }
+  }
+]

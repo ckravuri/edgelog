@@ -162,8 +162,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         const authRequestId = urlParams.get('auth_request_id');
         
-        // Detect if running on Android
+        // Detect platform
         const isAndroid = /android/i.test(navigator.userAgent);
+        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
         
         async function processAuth() {
             try {
@@ -207,19 +208,29 @@
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('success').style.display = 'block';
                 
-                // For Android: try to close the browser window automatically after a delay
+                // For Android: Try to redirect back to app using deep link
                 if (isAndroid && authRequestId) {
                     document.querySelector('.instruction-text').innerHTML = 
-                        'Authentication successful!<br><strong>You can close this window</strong><br>or tap the back button.';
+                        'Authentication successful!<br><strong>Returning to app...</strong>';
                     
-                    // Try to close the window after 2 seconds
+                    // Try deep link redirect after a short delay
                     setTimeout(() => {
-                        try {
-                            window.close();
-                        } catch (e) {
-                            console.log('Could not auto-close window');
-                        }
-                    }, 2000);
+                        const deepLink = `edgelog://auth?auth_request_id=${authRequestId}&status=success`;
+                        console.log('Attempting deep link:', deepLink);
+                        window.location.href = deepLink;
+                        
+                        // If deep link doesn't work after 2 seconds, show manual close instruction
+                        setTimeout(() => {
+                            document.querySelector('.instruction-text').innerHTML = 
+                                'Authentication successful!<br><strong>You can close this window</strong><br>or tap the back button.';
+                        }, 2000);
+                    }, 1000);
+                }
+                
+                // For iOS: Show close instruction
+                if (isIOS && authRequestId) {
+                    document.querySelector('.instruction-text').innerHTML = 
+                        'Tap the <strong>✕</strong> button in the<br>top-left corner to continue';
                 }
                 
             } catch (error) {

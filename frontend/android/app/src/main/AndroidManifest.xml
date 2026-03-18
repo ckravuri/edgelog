@@ -27,12 +27,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep link for auth callback -->
+            <!-- Deep link for auth callback (custom scheme) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="edgelog" android:host="auth" />
+            </intent-filter>
+
+            <!-- Android App Links for auth callback (https verified) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" 
+                      android:host="edgelog-staging-3.preview.emergentagent.com" 
+                      android:pathPrefix="/auth-callback" />
             </intent-filter>
 
         </activity>

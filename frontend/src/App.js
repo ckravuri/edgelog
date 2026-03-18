@@ -101,44 +101,68 @@ function App() {
   // Handle deep links for native auth callback
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
-      // Listen for app URL open events (deep links)
-      CapApp.addListener('appUrlOpen', async (event) => {
-        console.log('Deep link received:', event.url);
+      const API = process.env.REACT_APP_BACKEND_URL + '/api';
+      
+      const handleDeepLink = async (url) => {
+        console.log('Processing deep link:', url);
         
-        // Parse the URL: edgelog://auth?token=xxx
         try {
-          const url = new URL(event.url);
-          if (url.host === 'auth' && url.searchParams.has('token')) {
-            const token = url.searchParams.get('token');
-            console.log('Auth token received from deep link');
+          const parsedUrl = new URL(url);
+          
+          // Handle edgelog://auth?auth_request_id=xxx&status=success
+          if (parsedUrl.host === 'auth') {
+            const authRequestId = parsedUrl.searchParams.get('auth_request_id');
+            const status = parsedUrl.searchParams.get('status');
             
-            // Store the token and trigger auth
-            document.cookie = `session_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
-            setDeepLinkToken(token);
+            if (authRequestId && status === 'success') {
+              console.log('Auth success deep link received, fetching token...');
+              
+              // Retrieve the stored token from backend
+              const response = await fetch(`${API}/auth/native/retrieve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ auth_request_id: authRequestId }),
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                console.log('Token retrieved successfully');
+                
+                // Store in localStorage
+                localStorage.setItem('session_token', data.session_token);
+                
+                // Navigate to home
+                window.location.href = '/';
+              } else {
+                console.error('Failed to retrieve token');
+              }
+            }
             
-            // Force reload to pick up the new auth state
-            window.location.href = '/';
+            // Legacy: Handle token directly in URL
+            if (parsedUrl.searchParams.has('token')) {
+              const token = parsedUrl.searchParams.get('token');
+              console.log('Auth token received from deep link');
+              localStorage.setItem('session_token', token);
+              setDeepLinkToken(token);
+              window.location.href = '/';
+            }
           }
         } catch (e) {
           console.error('Error parsing deep link:', e);
         }
+      };
+      
+      // Listen for app URL open events (deep links)
+      CapApp.addListener('appUrlOpen', async (event) => {
+        console.log('Deep link received:', event.url);
+        await handleDeepLink(event.url);
       });
       
       // Check if app was opened with a URL
-      CapApp.getLaunchUrl().then((result) => {
+      CapApp.getLaunchUrl().then(async (result) => {
         if (result && result.url) {
           console.log('App launched with URL:', result.url);
-          try {
-            const url = new URL(result.url);
-            if (url.host === 'auth' && url.searchParams.has('token')) {
-              const token = url.searchParams.get('token');
-              document.cookie = `session_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}`;
-              setDeepLinkToken(token);
-              window.location.href = '/';
-            }
-          } catch (e) {
-            console.error('Error parsing launch URL:', e);
-          }
+          await handleDeepLink(result.url);
         }
       });
     }
