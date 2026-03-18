@@ -74,6 +74,7 @@ export default function LoginPage() {
       // Generate a unique auth request ID
       const authRequestId = Math.random().toString(36).substring(2) + Date.now().toString(36);
       sessionStorage.setItem('native_auth_request_id', authRequestId);
+      console.log('Generated auth request ID:', authRequestId);
       
       // Redirect to auth callback with auth_request_id
       const redirectUrl = BACKEND_URL + '/auth-callback.html?auth_request_id=' + authRequestId;
@@ -82,11 +83,21 @@ export default function LoginPage() {
       try {
         // Add listener for browser finished
         const listener = await Browser.addListener('browserFinished', async () => {
+          console.log('Browser finished event fired');
           setIsLoading(true);
           // When browser closes, poll for the auth token
           await pollForNativeAuth(authRequestId);
           listener.remove();
         });
+        
+        // On Android, also start polling immediately after a delay
+        // because browserFinished might not fire reliably
+        if (isAndroidNative) {
+          console.log('Android detected - starting background polling');
+          setTimeout(() => {
+            pollForNativeAuth(authRequestId);
+          }, 5000); // Start polling after 5 seconds
+        }
         
         await Browser.open({ 
           url: authUrl,
@@ -106,43 +117,61 @@ export default function LoginPage() {
   };
   
   const pollForNativeAuth = async (authRequestId) => {
+    // Prevent duplicate polling
+    if (window._isPolling) {
+      console.log('Already polling, skipping duplicate');
+      return;
+    }
+    window._isPolling = true;
+    
     // Poll the server to retrieve the stored auth token
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 30; // Increased to 30 attempts (45 seconds total)
+    
+    console.log('Starting to poll for auth token...');
     
     while (attempts < maxAttempts) {
       try {
+        console.log(`Poll attempt ${attempts + 1}/${maxAttempts}`);
         const response = await fetch(`${API}/auth/native/retrieve`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ auth_request_id: authRequestId }),
         });
         
+        console.log('Poll response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
           const sessionToken = data.session_token;
+          console.log('Got session token!');
           
           // Store the token in localStorage (works on native iOS)
           localStorage.setItem('session_token', sessionToken);
           
           // Navigate to home
           setIsLoading(false);
+          window._isPolling = false;
           navigate('/', { replace: true });
           return;
         } else if (response.status === 404) {
           // Token not stored yet, keep polling
+          console.log('Token not found yet, continuing...');
           await new Promise(resolve => setTimeout(resolve, 1500));
         } else {
           // Other error
+          console.log('Unexpected response:', response.status);
           break;
         }
       } catch (error) {
-        console.log('Poll attempt', attempts + 1);
+        console.log('Poll error:', error.message);
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
       attempts++;
     }
     
+    console.log('Polling finished without finding token');
+    window._isPolling = false;
     setIsLoading(false);
     // Don't show error - the user might have cancelled
   };
