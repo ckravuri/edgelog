@@ -215,15 +215,26 @@
                     
                     // Try deep link redirect after a short delay
                     setTimeout(() => {
-                        const deepLink = `edgelog://auth?auth_request_id=${authRequestId}&status=success`;
-                        console.log('Attempting deep link:', deepLink);
-                        window.location.href = deepLink;
+                        // Use Android Intent URL format for more reliable deep linking
+                        const intentUrl = `intent://auth?auth_request_id=${authRequestId}&status=success#Intent;scheme=edgelog;package=com.ravuri.edgelog;end`;
+                        const fallbackDeepLink = `edgelog://auth?auth_request_id=${authRequestId}&status=success`;
                         
-                        // If deep link doesn't work after 2 seconds, show manual close instruction
+                        console.log('Attempting Android Intent URL:', intentUrl);
+                        
+                        // Try Intent URL first (works better in Chrome)
+                        window.location.href = intentUrl;
+                        
+                        // Fallback: try regular deep link after 500ms
+                        setTimeout(() => {
+                            console.log('Trying fallback deep link:', fallbackDeepLink);
+                            window.location.href = fallbackDeepLink;
+                        }, 500);
+                        
+                        // If deep link doesn't work after 3 seconds, show manual close instruction
                         setTimeout(() => {
                             document.querySelector('.instruction-text').innerHTML = 
                                 'Authentication successful!<br><strong>You can close this window</strong><br>or tap the back button.';
-                        }, 2000);
+                        }, 3000);
                     }, 1000);
                 }
                 
