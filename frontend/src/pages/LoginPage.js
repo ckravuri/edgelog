@@ -144,10 +144,18 @@ export default function LoginPage() {
         if (response.ok) {
           const data = await response.json();
           const sessionToken = data.session_token;
-          console.log('Got session token!');
+          console.log('Got session token! Closing browser...');
           
-          // Store the token in localStorage (works on native iOS)
+          // Store the token in localStorage
           localStorage.setItem('session_token', sessionToken);
+          
+          // IMPORTANT: Close the browser automatically!
+          try {
+            await Browser.close();
+            console.log('Browser closed successfully');
+          } catch (closeErr) {
+            console.log('Could not close browser:', closeErr);
+          }
           
           // Navigate to home
           setIsLoading(false);
