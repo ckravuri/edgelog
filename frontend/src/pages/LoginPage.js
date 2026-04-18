@@ -16,49 +16,33 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const AppleIcon = () => (
-  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-  </svg>
-);
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const [isChecking, setIsChecking] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const authCheckRef = useRef(false);
+  const pollRef = useRef(null);
 
-  // Check platform
-  const isIosNative = Capacitor.getPlatform() === 'ios';
-  const isAndroidNative = Capacitor.getPlatform() === 'android';
   const isNative = Capacitor.isNativePlatform();
-  
-  // Apple Sign-In ONLY works on native iOS (not web, not Android)
-  // Web requires a separate Service ID configured in Apple Developer Console
-  const showAppleSignIn = isIosNative;
 
   useEffect(() => {
-    // Prevent multiple auth checks
     if (authCheckRef.current) return;
     authCheckRef.current = true;
-    
-    // Check if already authenticated
+
     const checkAuth = async () => {
       try {
-        // Get token from localStorage (for native) or rely on cookies (for web)
         const token = localStorage.getItem('session_token');
         const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-        
         const response = await fetch(`${API}/auth/me`, {
           credentials: 'include',
-          headers: headers
+          headers
         });
         if (response.ok) {
           navigate('/', { replace: true });
         }
-      } catch (error) {
-        // Not authenticated, stay on login
+      } catch (err) {
+        // Not authenticated
       } finally {
         setIsChecking(false);
       }
@@ -66,215 +50,105 @@ export default function LoginPage() {
     checkAuth();
   }, [navigate]);
 
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     if (isNative) {
-      // Generate a unique auth request ID
+      // Generate unique auth request ID
       const authRequestId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-      sessionStorage.setItem('native_auth_request_id', authRequestId);
-      console.log('Generated auth request ID:', authRequestId);
-      
-      // Redirect to auth callback with auth_request_id
-      const redirectUrl = BACKEND_URL + '/auth-callback.html?auth_request_id=' + authRequestId;
-      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
-      
+      console.log('[Auth] Generated auth_request_id:', authRequestId);
+
+      // Use the backend-served callback route (dynamic API URL, no caching)
+      const callbackUrl = `${BACKEND_URL}/api/auth/native-callback?auth_request_id=${authRequestId}`;
+      const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(callbackUrl)}`;
+
+      // Start polling IMMEDIATELY in background (1s intervals)
+      pollRef.current = setInterval(async () => {
+        try {
+          const response = await fetch(`${API}/auth/native/retrieve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ auth_request_id: authRequestId }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('[Auth] Token retrieved via polling!');
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+
+            localStorage.setItem('session_token', data.session_token);
+
+            try { await Browser.close(); } catch (e) { /* ok */ }
+
+            setIsLoading(false);
+            navigate('/', { replace: true });
+          }
+        } catch (err) {
+          // Ignore — token not ready yet
+        }
+      }, 1500);
+
+      // Timeout polling after 90 seconds
+      setTimeout(() => {
+        if (pollRef.current) {
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+          console.log('[Auth] Polling timeout');
+          setIsLoading(false);
+        }
+      }, 90000);
+
       try {
-        // Add listener for browser finished
+        // Listen for browser close event (user closed manually or deep link worked)
         const listener = await Browser.addListener('browserFinished', async () => {
-          console.log('Browser finished event fired');
-          setIsLoading(true);
-          // When browser closes, poll for the auth token
-          await pollForNativeAuth(authRequestId);
+          console.log('[Auth] Browser finished event');
+
+          // Give a final moment for the store to complete
+          await new Promise(r => setTimeout(r, 1000));
+
+          // One last retrieval attempt
+          try {
+            const response = await fetch(`${API}/auth/native/retrieve`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ auth_request_id: authRequestId }),
+            });
+            if (response.ok) {
+              const data = await response.json();
+              localStorage.setItem('session_token', data.session_token);
+              if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+              navigate('/', { replace: true });
+            }
+          } catch (e) { /* ok */ }
+
+          setIsLoading(false);
           listener.remove();
         });
-        
-        // On Android, also start polling immediately after a delay
-        // because browserFinished might not fire reliably
-        if (isAndroidNative) {
-          console.log('Android detected - starting background polling');
-          setTimeout(() => {
-            pollForNativeAuth(authRequestId);
-          }, 5000); // Start polling after 5 seconds
-        }
-        
-        await Browser.open({ 
+
+        await Browser.open({
           url: authUrl,
           presentationStyle: 'popover'
         });
       } catch (err) {
-        console.error('Browser open error:', err);
+        if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+        console.error('[Auth] Browser open error:', err);
         setError('Failed to open authentication');
         setIsLoading(false);
       }
     } else {
-      // Web - use normal redirect with current origin
+      // Web — redirect directly
       const redirectUrl = window.location.origin + '/';
       const authUrl = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
       window.location.href = authUrl;
-    }
-  };
-  
-  const pollForNativeAuth = async (authRequestId) => {
-    // Prevent duplicate polling
-    if (window._isPolling) {
-      console.log('Already polling, skipping duplicate');
-      return;
-    }
-    window._isPolling = true;
-    
-    // Poll the server to retrieve the stored auth token
-    let attempts = 0;
-    const maxAttempts = 30; // Increased to 30 attempts (45 seconds total)
-    
-    console.log('Starting to poll for auth token...');
-    
-    while (attempts < maxAttempts) {
-      try {
-        console.log(`Poll attempt ${attempts + 1}/${maxAttempts}`);
-        const response = await fetch(`${API}/auth/native/retrieve`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ auth_request_id: authRequestId }),
-        });
-        
-        console.log('Poll response status:', response.status);
-        
-        if (response.ok) {
-          const data = await response.json();
-          const sessionToken = data.session_token;
-          console.log('Got session token! Closing browser...');
-          
-          // Store the token in localStorage
-          localStorage.setItem('session_token', sessionToken);
-          
-          // IMPORTANT: Close the browser automatically!
-          try {
-            await Browser.close();
-            console.log('Browser closed successfully');
-          } catch (closeErr) {
-            console.log('Could not close browser:', closeErr);
-          }
-          
-          // Navigate to home
-          setIsLoading(false);
-          window._isPolling = false;
-          navigate('/', { replace: true });
-          return;
-        } else if (response.status === 404) {
-          // Token not stored yet, keep polling
-          console.log('Token not found yet, continuing...');
-          await new Promise(resolve => setTimeout(resolve, 1500));
-        } else {
-          // Other error
-          console.log('Unexpected response:', response.status);
-          break;
-        }
-      } catch (error) {
-        console.log('Poll error:', error.message);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-      }
-      attempts++;
-    }
-    
-    console.log('Polling finished without finding token');
-    window._isPolling = false;
-    setIsLoading(false);
-    // Don't show error - the user might have cancelled
-  };
-
-  const handleAppleLogin = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // Dynamically import the plugin only on iOS
-      const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
-      
-      // For native iOS apps - minimal options, iOS handles the rest automatically
-      // Do NOT include clientId or redirectURI for native iOS - it uses bundle ID automatically
-      const options = {
-        scopes: 'email name',
-      };
-
-      console.log('Starting Apple Sign-In with native options');
-      const result = await SignInWithApple.authorize(options);
-      console.log('Apple Sign-In result received');
-      
-      if (result.response && result.response.identityToken) {
-        console.log('Got identity token, sending to backend...');
-        console.log('API URL:', API);
-        
-        // Send token to backend for verification
-        let backendResponse;
-        try {
-          console.log('Making fetch request to:', `${API}/auth/apple`);
-          backendResponse = await fetch(`${API}/auth/apple`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({
-              identity_token: result.response.identityToken,
-              user_id: result.response.user,
-              email: result.response.email,
-              name: result.response.givenName 
-                ? `${result.response.givenName} ${result.response.familyName || ''}`.trim()
-                : null,
-            }),
-          });
-          console.log('Fetch completed, status:', backendResponse.status);
-        } catch (fetchError) {
-          console.error('Fetch error name:', fetchError.name);
-          console.error('Fetch error message:', fetchError.message);
-          console.error('Fetch error:', JSON.stringify(fetchError, Object.getOwnPropertyNames(fetchError)));
-          throw new Error(`Network error: ${fetchError.message || 'Unknown'}. API: ${API}`);
-        }
-
-        console.log('Backend response status:', backendResponse.status);
-        
-        if (!backendResponse.ok) {
-          const errorData = await backendResponse.json();
-          console.error('Backend error:', errorData);
-          throw new Error(errorData.detail || 'Authentication failed');
-        }
-
-        const responseData = await backendResponse.json();
-        console.log('Auth successful, response:', responseData);
-        
-        // Store the session token for native platforms using localStorage (cookies don't work on native)
-        if (responseData.session_token) {
-          localStorage.setItem('session_token', responseData.session_token);
-          console.log('Session token stored in localStorage');
-          
-          // Small delay to ensure localStorage is persisted
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        
-        // Success - navigate to home with user data to skip re-auth check
-        navigate('/', { replace: true, state: { user: responseData.user } });
-      } else {
-        console.error('No identity token in result:', result);
-        throw new Error('Failed to get identity token from Apple');
-      }
-    } catch (err) {
-      console.error('Apple Sign-In error:', err);
-      // Provide more specific error messages
-      let errorMessage = 'Apple Sign-In failed. Please try again.';
-      if (err.message) {
-        if (err.message.includes('canceled') || err.message.includes('cancelled')) {
-          errorMessage = 'Sign-in was cancelled.';
-        } else if (err.message.includes('network')) {
-          errorMessage = 'Network error. Please check your connection.';
-        } else {
-          errorMessage = err.message;
-        }
-      }
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -288,56 +162,38 @@ export default function LoginPage() {
 
   return (
     <div className="auth-screen" data-testid="login-page">
-      {/* Background glow effect */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-green-500/5 rounded-full blur-[100px] pointer-events-none" />
-      
-      {/* Logo */}
+
       <div className="flex items-center gap-3 mb-4 animate-fadeIn">
         <TrendingUp className="w-10 h-10 text-green-500" strokeWidth={1.5} />
       </div>
-      
+
       <h1 className="auth-logo animate-fadeIn" style={{ animationDelay: '0.1s' }} data-testid="app-logo">
         EDGELOG
       </h1>
-      
+
       <p className="auth-tagline animate-fadeIn" style={{ animationDelay: '0.2s' }}>
         Your Trading Edge, Journaled
       </p>
 
-      {/* Error message */}
       {error && (
         <div className="w-full max-w-xs mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm text-center animate-fadeIn">
           {error}
         </div>
       )}
-      
-      {/* Login buttons */}
+
       <div className="w-full max-w-xs space-y-4 animate-fadeIn" style={{ animationDelay: '0.3s' }}>
-        <button 
-          className="auth-btn" 
+        <button
+          className="auth-btn"
           onClick={handleGoogleLogin}
           disabled={isLoading}
           data-testid="google-login-btn"
         >
           <GoogleIcon />
-          Continue with Google
+          {isLoading ? 'Signing in...' : 'Continue with Google'}
         </button>
-        
-        {/* Show Apple Sign-In on iOS and web preview (not on Android) */}
-        {showAppleSignIn && (
-          <button 
-            className="auth-btn bg-black text-white border border-white/20 hover:bg-zinc-900" 
-            onClick={handleAppleLogin}
-            disabled={isLoading}
-            data-testid="apple-login-btn"
-          >
-            <AppleIcon />
-            {isLoading ? 'Signing in...' : 'Continue with Apple'}
-          </button>
-        )}
       </div>
-      
-      {/* Footer */}
+
       <p className="text-xs text-zinc-600 mt-12 text-center animate-fadeIn" style={{ animationDelay: '0.4s' }}>
         By continuing, you agree to our{' '}
         <a href="/privacy" className="text-zinc-400 hover:text-white underline">Privacy Policy</a>

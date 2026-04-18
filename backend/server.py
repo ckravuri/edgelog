@@ -294,8 +294,7 @@ async def logout(request: Request, response: Response):
     return {"message": "Logged out"}
 
 # ==================== NATIVE APP AUTH TOKEN STORAGE ====================
-# Temporary storage for native app auth tokens (expires after 5 minutes)
-native_auth_tokens = {}
+# Stored in MongoDB for persistence across server restarts
 
 class NativeAuthRequest(BaseModel):
     auth_request_id: str
@@ -306,219 +305,176 @@ class NativeAuthStore(BaseModel):
 
 @api_router.post("/auth/native/store")
 async def store_native_auth_token(data: NativeAuthStore):
-    """Store auth token for native app to retrieve"""
-    native_auth_tokens[data.auth_request_id] = {
-        "session_token": data.session_token,
-        "expires": time.time() + 300  # 5 minutes
-    }
+    """Store auth token in MongoDB for native app to retrieve"""
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=5)
+    await db.native_auth_tokens.update_one(
+        {"auth_request_id": data.auth_request_id},
+        {"$set": {
+            "auth_request_id": data.auth_request_id,
+            "session_token": data.session_token,
+            "expires_at": expires_at.isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    logger.info(f"Stored native auth token for request: {data.auth_request_id}")
     return {"success": True}
 
 @api_router.post("/auth/native/retrieve")
 async def retrieve_native_auth_token(data: NativeAuthRequest):
-    """Retrieve stored auth token for native app"""
-    token_data = native_auth_tokens.get(data.auth_request_id)
-    if not token_data:
+    """Retrieve stored auth token for native app from MongoDB"""
+    token_doc = await db.native_auth_tokens.find_one(
+        {"auth_request_id": data.auth_request_id},
+        {"_id": 0}
+    )
+    if not token_doc:
         raise HTTPException(status_code=404, detail="Auth request not found")
     
-    if time.time() > token_data["expires"]:
-        del native_auth_tokens[data.auth_request_id]
+    expires_at = token_doc.get("expires_at", "")
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+    if expires_at < datetime.now(timezone.utc):
+        await db.native_auth_tokens.delete_one({"auth_request_id": data.auth_request_id})
         raise HTTPException(status_code=410, detail="Auth request expired")
     
+    session_token = token_doc["session_token"]
     # Clean up after retrieval
-    del native_auth_tokens[data.auth_request_id]
-    return {"session_token": token_data["session_token"]}
+    await db.native_auth_tokens.delete_one({"auth_request_id": data.auth_request_id})
+    logger.info(f"Retrieved native auth token for request: {data.auth_request_id}")
+    return {"session_token": session_token}
 
 # ==================== NATIVE APP AUTH CALLBACK ====================
 from fastapi.responses import HTMLResponse
 
-@api_router.get("/auth/native-callback", response_class=HTMLResponse)
-async def native_auth_callback(request: Request, response: Response):
+@api_router.get("/auth/native-callback")
+async def native_auth_callback(request: Request, auth_request_id: str = Query(default="")):
     """
     Callback page for native app authentication.
-    This page receives the auth redirect, exchanges the session_id for a token,
-    sets the cookie, and shows a success page.
+    Served by backend to ensure dynamic API URL (no hardcoding).
+    The session_id arrives in the URL hash fragment.
+    This page exchanges it for a session_token, stores it for the native app,
+    and attempts to deep-link back.
     """
-    # The session_id comes in the URL hash, which we can't read server-side
-    # So we need to use JavaScript to read it and make an API call
+    api_url = os.environ.get('REACT_APP_BACKEND_URL', '') or (request.base_url.scheme + "://" + request.headers.get('host', ''))
     
-    api_url = os.environ.get('REACT_APP_BACKEND_URL', '') or request.base_url.scheme + "://" + request.headers.get('host', '')
-    
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>EdgeLog - Completing Sign In...</title>
-        <style>
-            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-            body {{
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-            }}
-            .container {{
-                text-align: center;
-                padding: 40px;
-                max-width: 400px;
-            }}
-            .icon {{
-                width: 80px;
-                height: 80px;
-                margin: 0 auto 24px;
-                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }}
-            .icon svg {{
-                width: 40px;
-                height: 40px;
-                fill: white;
-            }}
-            .spinner {{
-                width: 40px;
-                height: 40px;
-                border: 3px solid rgba(255,255,255,0.1);
-                border-top-color: #22c55e;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-            }}
-            @keyframes spin {{
-                to {{ transform: rotate(360deg); }}
-            }}
-            h1 {{
-                font-size: 24px;
-                margin-bottom: 12px;
-            }}
-            p {{
-                color: #888;
-                margin-bottom: 32px;
-            }}
-            .btn {{
-                display: inline-block;
-                background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-                color: white;
-                padding: 16px 32px;
-                border-radius: 12px;
-                text-decoration: none;
-                font-weight: 600;
-                font-size: 16px;
-                border: none;
-                cursor: pointer;
-            }}
-            .note {{
-                margin-top: 24px;
-                font-size: 14px;
-                color: #666;
-            }}
-            .error {{
-                color: #ef4444;
-                margin-bottom: 16px;
-            }}
-            #loading {{ display: block; }}
-            #success {{ display: none; }}
-            #error-state {{ display: none; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div id="loading">
-                <div class="icon">
-                    <div class="spinner"></div>
-                </div>
-                <h1>Completing Sign In...</h1>
-                <p>Please wait while we authenticate you.</p>
-            </div>
-            
-            <div id="success">
-                <div class="icon">
-                    <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                </div>
-                <h1>Sign In Successful!</h1>
-                <p>You have successfully signed in to EdgeLog.</p>
-                <button class="btn" onclick="closeWindow()">Return to App</button>
-                <p class="note">Please close this window and return to the EdgeLog app.</p>
-            </div>
-            
-            <div id="error-state">
-                <div class="icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
-                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-                </div>
-                <h1>Sign In Failed</h1>
-                <p class="error" id="error-message">An error occurred during authentication.</p>
-                <button class="btn" onclick="closeWindow()">Close</button>
-            </div>
-        </div>
-        
-        <script>
-            const API_URL = '{api_url}/api';
-            
-            async function processAuth() {{
-                try {{
-                    // Extract session_id from URL hash
-                    const hash = window.location.hash;
-                    const sessionIdMatch = hash.match(/session_id=([^&]+)/);
-                    
-                    if (!sessionIdMatch) {{
-                        throw new Error('No session ID found');
-                    }}
-                    
-                    const sessionId = sessionIdMatch[1];
-                    
-                    // Exchange session_id for session_token
-                    const response = await fetch(API_URL + '/auth/session', {{
-                        method: 'POST',
-                        headers: {{
-                            'Content-Type': 'application/json',
-                        }},
-                        credentials: 'include',
-                        body: JSON.stringify({{ session_id: sessionId }}),
-                    }});
-                    
-                    if (!response.ok) {{
-                        throw new Error('Authentication failed');
-                    }}
-                    
-                    const data = await response.json();
-                    
-                    // Show success state
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('success').style.display = 'block';
-                    
-                    // Try to close window after delay
-                    setTimeout(closeWindow, 2000);
-                    
-                }} catch (error) {{
-                    console.error('Auth error:', error);
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('error-state').style.display = 'block';
-                    document.getElementById('error-message').textContent = error.message;
-                }}
-            }}
-            
-            function closeWindow() {{
-                // Try multiple methods to close the window
-                window.close();
-                // If window.close doesn't work, try opener
-                if (window.opener) {{
-                    window.opener.focus();
-                    window.close();
-                }}
-            }}
-            
-            // Start processing on page load
-            processAuth();
-        </script>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>EdgeLog - Sign In</title>
+<style>
+*{{margin:0;padding:0;box-sizing:border-box}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#000;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px}}
+.container{{text-align:center;max-width:320px;width:100%}}
+.logo{{font-size:24px;font-weight:800;letter-spacing:3px;margin-bottom:40px;color:#22c55e}}
+.spinner-wrap{{display:flex;flex-direction:column;align-items:center;gap:20px}}
+.spinner{{width:48px;height:48px;border:3px solid #222;border-top-color:#22c55e;border-radius:50%;animation:spin .8s linear infinite}}
+@keyframes spin{{to{{transform:rotate(360deg)}}}}
+@keyframes scaleIn{{0%{{transform:scale(0);opacity:0}}50%{{transform:scale(1.1)}}100%{{transform:scale(1);opacity:1}}}}
+.check{{width:80px;height:80px;margin:0 auto 24px;background:linear-gradient(135deg,#22c55e,#16a34a);border-radius:50%;display:flex;align-items:center;justify-content:center;animation:scaleIn .4s ease-out;box-shadow:0 8px 32px rgba(34,197,94,.3)}}
+.check svg{{width:40px;height:40px;fill:#fff}}
+h1{{font-size:24px;font-weight:700;margin-bottom:8px}}
+.sub{{color:#888;font-size:15px;margin-bottom:32px}}
+.btn{{display:block;width:100%;padding:18px 24px;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:14px;color:#fff;font-size:17px;font-weight:600;cursor:pointer;margin-bottom:16px;box-shadow:0 4px 16px rgba(34,197,94,.3)}}
+.btn:active{{transform:scale(.98)}}
+.hint{{color:#666;font-size:13px;line-height:1.5}}
+.hint strong{{color:#999}}
+.err-icon{{width:80px;height:80px;margin:0 auto 24px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(239,68,68,.3)}}
+.err-icon svg{{width:40px;height:40px;fill:#fff}}
+.err-msg{{color:#ef4444;font-size:14px;margin-bottom:24px;padding:12px;background:rgba(239,68,68,.1);border-radius:8px}}
+#loading{{display:block}}#success{{display:none}}#error-state{{display:none}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="logo">EDGELOG</div>
+<div id="loading"><div class="spinner-wrap"><div class="spinner"></div><div style="color:#888;font-size:16px">Signing you in...</div></div></div>
+<div id="success">
+<div class="check"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+<h1>You're all set!</h1>
+<p class="sub">Successfully signed in to EdgeLog</p>
+<button class="btn" id="returnBtn" onclick="returnToApp()">Return to EdgeLog</button>
+<p class="hint" id="hintText">Or tap <strong>back</strong> or <strong>close</strong> to return</p>
+</div>
+<div id="error-state">
+<div class="err-icon"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></div>
+<h1>Sign in failed</h1>
+<p class="err-msg" id="error-message">Something went wrong</p>
+<p class="hint">Please close this window and try again</p>
+</div>
+</div>
+<script>
+var API_URL='{api_url}/api';
+var authRequestId='{auth_request_id}';
+console.log('Native callback loaded. API:',API_URL,'authRequestId:',authRequestId);
+
+function returnToApp(){{
+  if(!authRequestId){{try{{window.close()}}catch(e){{}}return}}
+  var dl='edgelog://auth?auth_request_id='+authRequestId+'&status=success';
+  window.location.href=dl;
+  var ua=navigator.userAgent.toLowerCase();
+  if(ua.includes('android')){{
+    setTimeout(function(){{
+      window.location.href='intent://auth?auth_request_id='+authRequestId+'&status=success#Intent;scheme=edgelog;package=com.ravuri.edgelog;end';
+    }},500);
+  }}
+  setTimeout(function(){{
+    document.getElementById('returnBtn').textContent='Close this window';
+    document.getElementById('hintText').innerHTML='Tap <strong>back</strong> or <strong>close</strong> to return to the app';
+  }},1500);
+}}
+
+async function processAuth(){{
+  try{{
+    var hash=window.location.hash;
+    console.log('Hash:',hash);
+    var m=hash.match(/session_id=([^&]+)/);
+    if(!m)throw new Error('Session not found');
+    var sessionId=m[1];
+    console.log('Exchanging session_id...');
+    var r=await fetch(API_URL+'/auth/session',{{
+      method:'POST',
+      headers:{{'Content-Type':'application/json'}},
+      credentials:'include',
+      body:JSON.stringify({{session_id:sessionId}})
+    }});
+    if(!r.ok)throw new Error('Authentication failed ('+r.status+')');
+    var data=await r.json();
+    console.log('Got session_token, storing for native app...');
+    if(authRequestId){{
+      var sr=await fetch(API_URL+'/auth/native/store',{{
+        method:'POST',
+        headers:{{'Content-Type':'application/json'}},
+        body:JSON.stringify({{auth_request_id:authRequestId,session_token:data.session_token}})
+      }});
+      console.log('Store result:',sr.status);
+    }}
+    document.getElementById('loading').style.display='none';
+    document.getElementById('success').style.display='block';
+    if(authRequestId){{setTimeout(returnToApp,800)}}
+  }}catch(e){{
+    console.error('Auth error:',e);
+    document.getElementById('loading').style.display='none';
+    document.getElementById('error-state').style.display='block';
+    document.getElementById('error-message').textContent=e.message;
+  }}
+}}
+processAuth();
+</script>
+</body>
+</html>"""
+    return HTMLResponse(
+        content=html_content,
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 
 
@@ -1878,6 +1834,24 @@ async def export_report(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=edgelog_report_{report_id}.pdf"}
     )
+
+# ==================== WELL-KNOWN / ASSET LINKS ====================
+
+@app.get("/.well-known/assetlinks.json")
+async def asset_links():
+    """Serve Android App Links assetlinks.json for deep link verification"""
+    return [
+        {
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": "com.ravuri.edgelog",
+                "sha256_cert_fingerprints": [
+                    "6B:AA:80:2E:74:FB:BA:FD:7B:9E:5F:B4:E6:4B:8B:E8:22:42:2A:F4:33:3D:B2:E5:54:92:83:11:0A:5E:15:11"
+                ]
+            }
+        }
+    ]
 
 # ==================== HEALTH CHECK ====================
 
