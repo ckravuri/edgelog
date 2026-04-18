@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "EdgeLog",
+    "slug": "edgelog",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "edgelog",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "ios": {
+      "bundleIdentifier": "com.ravuri.edgelog",
+      "supportsTablet": true,
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-8958093663498636~7989527556"
+      }
+    },
+    "android": {
+      "package": "com.ravuri.edgelog",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      },
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-8958093663498636~5932109432"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "edgelog",
+              "host": "auth"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "backendUrl": "https://edgelog-staging-3.preview.emergentagent.com"
+    }
+  }
+}
