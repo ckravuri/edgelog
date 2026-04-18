@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
             <h3 className="text-zinc-400 font-medium mt-3 mb-1">2.1 Personal Information</h3>
             <p>When you create an account, we collect:</p>
             <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
-              <li>Name (from your Google/Apple account)</li>
+              <li>Name (from your Google account)</li>
               <li>Email address</li>
               <li>Profile picture (if provided by your sign-in provider)</li>
             </ul>
@@ -113,7 +113,7 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-white font-semibold text-base mb-2">5. Third-Party Services</h2>
             <p>We use the following third-party services:</p>
             <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
-              <li><strong className="text-white">Google Sign-In / Apple Sign-In:</strong> For authentication</li>
+              <li><strong className="text-white">Google Sign-In:</strong> For authentication</li>
               <li><strong className="text-white">Cloudinary:</strong> For storing trade screenshots</li>
               <li><strong className="text-white">OpenAI:</strong> For generating AI-powered trading insights</li>
               <li><strong className="text-white">MongoDB:</strong> For data storage</li>

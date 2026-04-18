@@ -40,7 +40,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-lg font-semibold text-white mb-2">3. User Accounts</h2>
           <p>
-            You must create an account using Google Sign-In or Apple Sign-In to use the App. 
+            You must create an account using Google Sign-In to use the App. 
             You are responsible for maintaining the confidentiality of your account and for all 
             activities that occur under your account.
           </p>
