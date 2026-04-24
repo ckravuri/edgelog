@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
 } from 'react-native';
@@ -8,11 +8,20 @@ import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import * as api from '../services/api';
+import { getBannerAdId } from '../services/admob';
+
+let BannerAd, BannerAdSize;
+try {
+  const mobileAds = require('react-native-google-mobile-ads');
+  BannerAd = mobileAds.BannerAd;
+  BannerAdSize = mobileAds.BannerAdSize;
+} catch {}
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
   const [summary, setSummary] = useState(null);
   const [todayTrades, setTodayTrades] = useState([]);
+  const [isPremium, setIsPremium] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -23,6 +32,10 @@ export default function HomeScreen({ navigation }) {
     } catch (err) {
       console.warn('Failed to load home data:', err.message);
     }
+    try {
+      const sub = await api.getSubscriptionStatus();
+      setIsPremium(sub?.is_premium && !sub?.is_trial);
+    } catch {}
   }, []);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
@@ -117,6 +130,17 @@ export default function HomeScreen({ navigation }) {
         )}
 
         <View style={{ height: 32 }} />
+
+        {/* Banner Ad for free users */}
+        {!isPremium && BannerAd && (
+          <View style={{ alignItems: 'center', marginBottom: 16 }}>
+            <BannerAd
+              unitId={getBannerAdId()}
+              size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+              requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+            />
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

@@ -18,9 +18,6 @@
       "supportsTablet": true,
       "usesAppleSignIn": true,
       "googleServicesFile": "./GoogleService-Info.plist",
-      "config": {
-        "googleMobileAdsAppId": "ca-app-pub-8958093663498636~7989527556"
-      },
       "infoPlist": {
         "CFBundleURLTypes": [
           {
@@ -39,9 +36,6 @@
         "backgroundColor": "#000000"
       },
       "googleServicesFile": "./google-services.json",
-      "config": {
-        "googleMobileAdsAppId": "ca-app-pub-8958093663498636~5932109432"
-      },
       "intentFilters": [
         {
           "action": "VIEW",
@@ -72,6 +66,13 @@
         "expo-av",
         {
           "microphonePermission": "EdgeLog needs microphone access to record voice trade entries."
+        }
+      ],
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-8958093663498636~5932109432",
+          "iosAppId": "ca-app-pub-8958093663498636~7989527556"
         }
       ]
     ],

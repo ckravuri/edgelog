@@ -1,13 +1,17 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Switch,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
+import { BACKEND_URL } from '../config';
 import * as api from '../services/api';
+
+const PRIVACY_URL = `${BACKEND_URL}/privacy`;
+const TERMS_URL = `${BACKEND_URL}/terms`;
 
 export default function SettingsScreen() {
   const { user, signOut } = useAuth();
@@ -16,7 +20,7 @@ export default function SettingsScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const [sub] = await Promise.all([api.getSubscriptionStatus()]);
+      const sub = await api.getSubscriptionStatus();
       setSubscription(sub);
     } catch {}
   }, []);
@@ -33,14 +37,13 @@ export default function SettingsScreen() {
   const updateMaxTrades = async (delta) => {
     const newMax = Math.max(1, Math.min(20, maxTrades + delta));
     setMaxTrades(newMax);
-    try {
-      await api.updateDiscipline(newMax);
-    } catch {}
+    try { await api.updateDiscipline(newMax); } catch {}
   };
 
-  const isPremium = subscription?.is_premium;
+  const isPremium = subscription?.is_premium && !subscription?.is_trial;
   const isTrial = subscription?.is_trial;
   const trialDays = subscription?.trial_days_left;
+  const showUpgrade = !isPremium;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -57,9 +60,14 @@ export default function SettingsScreen() {
               <Text style={styles.profileName}>{user?.name}</Text>
               <Text style={styles.profileEmail}>{user?.email}</Text>
             </View>
-            <View style={[styles.tierBadge, { backgroundColor: isPremium ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.1)' }]}>
-              <Text style={{ color: isPremium ? colors.accent : colors.textSecondary, fontSize: 11, fontWeight: '700' }}>
-                {isPremium ? (isTrial ? `TRIAL (${trialDays}d)` : 'PREMIUM') : 'FREE'}
+            <View style={[styles.tierBadge, {
+              backgroundColor: isPremium ? 'rgba(34,197,94,0.15)' : isTrial ? 'rgba(234,179,8,0.15)' : 'rgba(255,255,255,0.1)'
+            }]}>
+              <Text style={{
+                color: isPremium ? colors.accent : isTrial ? colors.yellow : colors.textSecondary,
+                fontSize: 11, fontWeight: '700'
+              }}>
+                {isPremium ? 'PREMIUM' : isTrial ? `TRIAL (${trialDays}d)` : 'FREE'}
               </Text>
             </View>
           </View>
@@ -82,18 +90,21 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Subscription Features */}
+        {/* Subscription */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Subscription Features</Text>
+          <Text style={styles.cardTitle}>Subscription</Text>
           <FeatureRow label="Ad-Free Experience" enabled={isPremium} />
           <FeatureRow label="Unlimited Trade History" enabled={isPremium} />
           <FeatureRow label="Unlimited AI Reports" enabled={isPremium} />
+          <FeatureRow label="Unlimited Voice Logging" enabled={isPremium} />
           <FeatureRow label="MT4/MT5 Import" enabled={isPremium} />
           <FeatureRow label="Export to CSV/PDF" enabled={isPremium} />
 
-          {!isPremium && (
+          {showUpgrade && (
             <View style={styles.upgradeBox}>
-              <Text style={styles.upgradeTitle}>Upgrade to Premium</Text>
+              <Text style={styles.upgradeTitle}>
+                {isTrial ? `Your trial expires in ${trialDays} days` : 'Upgrade to Premium'}
+              </Text>
               <View style={styles.priceRow}>
                 <View style={styles.priceCard}>
                   <Text style={styles.priceAmount}>$5.99</Text>
@@ -109,12 +120,27 @@ export default function SettingsScreen() {
                 <Ionicons name="star" size={16} color="#000" />
                 <Text style={styles.upgradeBtnText}>Subscribe Now</Text>
               </TouchableOpacity>
-              <Text style={styles.upgradeNote}>7-day free trial included</Text>
+              {!isTrial && <Text style={styles.upgradeNote}>7-day free trial included</Text>}
             </View>
           )}
         </View>
 
-        {/* Account Actions */}
+        {/* Legal */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Legal</Text>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL(PRIVACY_URL)}>
+            <Ionicons name="shield-checkmark-outline" size={20} color={colors.textSecondary} />
+            <Text style={styles.menuText}>Privacy Policy</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL(TERMS_URL)}>
+            <Ionicons name="document-text-outline" size={20} color={colors.textSecondary} />
+            <Text style={styles.menuText}>Terms of Service</Text>
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Sign Out */}
         <View style={styles.card}>
           <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
             <Ionicons name="log-out-outline" size={20} color={colors.red} />
@@ -173,9 +199,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   featureLabel: { fontSize: 14, color: colors.text },
-  upgradeBox: { marginTop: 12 },
-  upgradeTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 12, textAlign: 'center' },
-  priceRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  upgradeBox: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border },
+  upgradeTitle: { fontSize: 15, fontWeight: '700', color: colors.yellow, marginBottom: 12, textAlign: 'center' },
+  priceRow: { flexDirection: 'row', gap: 12, marginBottom: 4 },
   priceCard: {
     flex: 1, backgroundColor: colors.surface, borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: colors.cardBorder, alignItems: 'center',
@@ -185,11 +211,11 @@ const styles = StyleSheet.create({
   pricePeriod: { fontSize: 12, color: colors.textSecondary },
   upgradeBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 12, marginTop: 12,
+    gap: 6, backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 14, marginTop: 12,
   },
-  upgradeBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
+  upgradeBtnText: { color: '#000', fontWeight: '700', fontSize: 15 },
   upgradeNote: { fontSize: 11, color: colors.textMuted, textAlign: 'center', marginTop: 6 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
-  menuText: { fontSize: 15, fontWeight: '600' },
+  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
+  menuText: { fontSize: 15, fontWeight: '600', color: colors.text },
   version: { textAlign: 'center', color: colors.textMuted, fontSize: 12, marginTop: 8 },
 });
