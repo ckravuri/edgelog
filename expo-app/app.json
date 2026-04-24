@@ -14,7 +14,7 @@
       "backgroundColor": "#000000"
     },
     "ios": {
-      "bundleIdentifier": "com.edgelog.app",
+      "bundleIdentifier": "com.ravuri.edgelog",
       "supportsTablet": true,
       "usesAppleSignIn": true,
       "googleServicesFile": "./GoogleService-Info.plist",

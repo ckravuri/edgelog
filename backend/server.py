@@ -59,7 +59,7 @@ EMERGENT_AUTH_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/ses
 GOOGLE_WEB_CLIENT_ID = "168585078949-dbma6ti5vg2tm74s0eb7sf66i61rhu8o.apps.googleusercontent.com"
 GOOGLE_IOS_CLIENT_ID = "168585078949-rgs53ketk7c1rgetbq9iftnjhv0jehi0.apps.googleusercontent.com"
 GOOGLE_ANDROID_CLIENT_ID = "168585078949-va9hptqsimbnqseaq3ge90rjur2takfc.apps.googleusercontent.com"
-APPLE_APP_ID = "com.edgelog.app"
+APPLE_APP_ID = "com.ravuri.edgelog"
 
 # ==================== MODELS ====================
 
