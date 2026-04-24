@@ -1775,6 +1775,8 @@ Return ONLY this JSON format (use null for missing values):
   "stop_loss": 2310.00,
   "take_profit": 2340.00,
   "lot_size": 0.01,
+  "pnl": 150.00,
+  "outcome": "win",
   "notes": "breakout trade"
 }}
 
@@ -1783,6 +1785,8 @@ Rules:
 - trade_type: "buy" or "sell" or null
 - entry_price, stop_loss, take_profit: numbers or null
 - lot_size: number or null (default null)
+- pnl: profit/loss amount in dollars, positive for profit, negative for loss, null if not mentioned
+- outcome: "win" if profit mentioned, "loss" if loss mentioned, "open" if neither mentioned
 - notes: any extra context mentioned"""
         
         ai_response = await chat.send_message(UserMessage(text=extraction_prompt))

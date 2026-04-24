@@ -57,6 +57,16 @@ export default function CalendarScreen() {
     cells.push({ day: d, data: dayMap[dateStr] || null });
   }
 
+  // Calculate this week's P/L
+  const today = new Date();
+  const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // Mon=0
+  const weekStart = new Date(today);
+  weekStart.setDate(today.getDate() - dayOfWeek);
+  const weekPnl = data?.days?.reduce((sum, d) => {
+    const dDate = new Date(d.date);
+    return dDate >= weekStart ? sum + (d.pnl || 0) : sum;
+  }, 0) || 0;
+
   const stats = data?.stats || {};
 
   return (
@@ -84,12 +94,20 @@ export default function CalendarScreen() {
           <StatPill label="Red" value={stats.red_days ?? 0} color={colors.red} />
         </View>
 
-        {/* P/L for month */}
+        {/* P/L for month + week */}
         <View style={styles.pnlRow}>
-          <Text style={styles.pnlLabel}>Month P/L</Text>
-          <Text style={[styles.pnlValue, { color: (stats.total_pnl ?? 0) >= 0 ? colors.accent : colors.red }]}>
-            {(stats.total_pnl ?? 0) >= 0 ? '+' : ''}${(stats.total_pnl ?? 0).toFixed(2)}
-          </Text>
+          <View>
+            <Text style={styles.pnlLabel}>Month P/L</Text>
+            <Text style={[styles.pnlValue, { color: (stats.total_pnl ?? 0) >= 0 ? colors.accent : colors.red }]}>
+              {(stats.total_pnl ?? 0) >= 0 ? '+' : ''}${(stats.total_pnl ?? 0).toFixed(2)}
+            </Text>
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={styles.pnlLabel}>This Week</Text>
+            <Text style={[styles.pnlValue, { color: weekPnl >= 0 ? colors.accent : colors.red }]}>
+              {weekPnl >= 0 ? '+' : ''}${weekPnl.toFixed(2)}
+            </Text>
+          </View>
         </View>
 
         {/* Calendar Grid */}

@@ -19,8 +19,8 @@ export default function AddTradeScreen({ navigation, route }) {
   const [stopLoss, setStopLoss] = useState(prefill.stop_loss || '');
   const [takeProfit, setTakeProfit] = useState(prefill.take_profit || '');
   const [lotSize, setLotSize] = useState(prefill.lot_size || '');
-  const [outcome, setOutcome] = useState('open');
-  const [pnl, setPnl] = useState('');
+  const [outcome, setOutcome] = useState(prefill.outcome || 'open');
+  const [pnl, setPnl] = useState(prefill.pnl || '');
   const [notes, setNotes] = useState(prefill.notes || '');
   const [emotion, setEmotion] = useState('');
   const [saving, setSaving] = useState(false);
@@ -140,7 +140,10 @@ export default function AddTradeScreen({ navigation, route }) {
               <TouchableOpacity
                 key={o}
                 style={[styles.outcomeChip, outcome === o && styles.outcomeActive(o)]}
-                onPress={() => setOutcome(o)}
+                onPress={() => {
+                  setOutcome(o);
+                  if (o === 'open' || o === 'breakeven') setPnl('');
+                }}
               >
                 <Text style={[styles.outcomeText, outcome === o && styles.outcomeTextActive(o)]}>{o.toUpperCase()}</Text>
               </TouchableOpacity>
@@ -151,7 +154,19 @@ export default function AddTradeScreen({ navigation, route }) {
           {outcome !== 'open' && (
             <>
               <Text style={styles.label}>P/L ($)</Text>
-              <TextInput style={styles.input} keyboardType="numeric" value={pnl} onChangeText={setPnl} placeholder="e.g. 150 or -75" placeholderTextColor={colors.textMuted} />
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                value={pnl}
+                onChangeText={(val) => {
+                  setPnl(val);
+                  const num = parseFloat(val);
+                  if (!isNaN(num) && num > 0 && outcome === 'open') setOutcome('win');
+                  if (!isNaN(num) && num < 0 && outcome === 'open') setOutcome('loss');
+                }}
+                placeholder="e.g. 150 or -75"
+                placeholderTextColor={colors.textMuted}
+              />
             </>
           )}
 

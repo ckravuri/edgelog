@@ -123,6 +123,8 @@ export default function VoiceTradeScreen({ navigation }) {
         stop_loss: result.stop_loss ? String(result.stop_loss) : '',
         take_profit: result.take_profit ? String(result.take_profit) : '',
         lot_size: result.lot_size ? String(result.lot_size) : '',
+        pnl: result.pnl ? String(result.pnl) : '',
+        outcome: result.outcome || 'open',
         notes: result.notes || '',
       }
     });
@@ -142,7 +144,7 @@ export default function VoiceTradeScreen({ navigation }) {
         {/* Instructions */}
         <Text style={styles.instructions}>
           Speak your trade details naturally. Example:{'\n'}
-          "Buy XAUUSD at 2320, stop loss 2310, take profit 2340"
+          "Buy XAUUSD at 2320, stop loss 2310, take profit 2340, profit 150 dollars"
         </Text>
 
         {/* Recording Button */}
@@ -195,6 +197,8 @@ export default function VoiceTradeScreen({ navigation }) {
             <DataRow label="Stop Loss" value={result.stop_loss} />
             <DataRow label="Take Profit" value={result.take_profit} />
             <DataRow label="Lot Size" value={result.lot_size} />
+            <DataRow label="P/L" value={result.pnl != null ? `$${result.pnl}` : null} color={result.pnl > 0 ? colors.accent : result.pnl < 0 ? colors.red : colors.text} />
+            <DataRow label="Outcome" value={result.outcome?.toUpperCase()} color={result.outcome === 'win' ? colors.accent : result.outcome === 'loss' ? colors.red : colors.blue} />
             {result.notes && <DataRow label="Notes" value={result.notes} />}
 
             <TouchableOpacity style={styles.confirmBtn} onPress={confirmTrade}>

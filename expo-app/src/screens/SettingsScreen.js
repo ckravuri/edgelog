@@ -92,10 +92,25 @@ export default function SettingsScreen() {
           <FeatureRow label="Export to CSV/PDF" enabled={isPremium} />
 
           {!isPremium && (
-            <TouchableOpacity style={styles.upgradeBtn}>
-              <Ionicons name="star" size={16} color="#000" />
-              <Text style={styles.upgradeBtnText}>Upgrade to Premium</Text>
-            </TouchableOpacity>
+            <View style={styles.upgradeBox}>
+              <Text style={styles.upgradeTitle}>Upgrade to Premium</Text>
+              <View style={styles.priceRow}>
+                <View style={styles.priceCard}>
+                  <Text style={styles.priceAmount}>$5.99</Text>
+                  <Text style={styles.pricePeriod}>/month</Text>
+                </View>
+                <View style={[styles.priceCard, { borderColor: colors.accent }]}>
+                  <Text style={styles.priceBadge}>SAVE 30%</Text>
+                  <Text style={styles.priceAmount}>$49.99</Text>
+                  <Text style={styles.pricePeriod}>/year</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.upgradeBtn}>
+                <Ionicons name="star" size={16} color="#000" />
+                <Text style={styles.upgradeBtnText}>Subscribe Now</Text>
+              </TouchableOpacity>
+              <Text style={styles.upgradeNote}>7-day free trial included</Text>
+            </View>
           )}
         </View>
 
@@ -158,11 +173,22 @@ const styles = StyleSheet.create({
     paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   featureLabel: { fontSize: 14, color: colors.text },
+  upgradeBox: { marginTop: 12 },
+  upgradeTitle: { fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 12, textAlign: 'center' },
+  priceRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  priceCard: {
+    flex: 1, backgroundColor: colors.surface, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: colors.cardBorder, alignItems: 'center',
+  },
+  priceBadge: { fontSize: 9, fontWeight: '800', color: colors.accent, backgroundColor: 'rgba(34,197,94,0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginBottom: 4 },
+  priceAmount: { fontSize: 24, fontWeight: '800', color: colors.text },
+  pricePeriod: { fontSize: 12, color: colors.textSecondary },
   upgradeBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 12, marginTop: 12,
   },
   upgradeBtnText: { color: '#000', fontWeight: '700', fontSize: 14 },
+  upgradeNote: { fontSize: 11, color: colors.textMuted, textAlign: 'center', marginTop: 6 },
   menuItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
   menuText: { fontSize: 15, fontWeight: '600' },
   version: { textAlign: 'center', color: colors.textMuted, fontSize: 12, marginTop: 8 },
