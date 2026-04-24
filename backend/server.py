@@ -2106,6 +2106,67 @@ async def asset_links():
         }
     ]
 
+# ==================== PRIVACY POLICY & TERMS ====================
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy_policy():
+    """Serve Privacy Policy page"""
+    return HTMLResponse(content="""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EdgeLog - Privacy Policy</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#000;color:#ccc;padding:24px;max-width:700px;margin:0 auto;line-height:1.7}h1{color:#22c55e;font-size:28px;margin-bottom:8px}h2{color:#fff;font-size:18px;margin:24px 0 8px}p,li{font-size:14px;margin-bottom:8px}.updated{color:#888;font-size:12px;margin-bottom:24px}</style>
+</head><body>
+<h1>Privacy Policy</h1>
+<p class="updated">Last updated: April 2026</p>
+<p>EdgeLog ("we", "our", "us") is a trading journal application. This Privacy Policy explains how we collect, use, and protect your information.</p>
+<h2>1. Information We Collect</h2>
+<ul><li>Name and email (from your Google account)</li><li>Trading data you enter (pairs, prices, P/L, notes)</li><li>Voice recordings (processed in real-time, not stored)</li><li>App usage analytics</li></ul>
+<h2>2. How We Use Your Information</h2>
+<ul><li>To provide and improve the trading journal service</li><li>To generate AI-powered performance reports</li><li>To process voice trade entries</li><li>To manage your subscription</li></ul>
+<h2>3. Data Storage & Security</h2>
+<p>Your data is stored securely using MongoDB Atlas with encryption at rest. We use HTTPS for all data transmission. Voice recordings are processed in real-time and are not stored on our servers.</p>
+<h2>4. Third-Party Services</h2>
+<ul><li><strong>Google Sign-In:</strong> For authentication</li><li><strong>Apple Sign-In:</strong> For authentication (iOS)</li><li><strong>OpenAI:</strong> For AI reports and voice processing</li><li><strong>RevenueCat:</strong> For subscription management</li><li><strong>Google AdMob:</strong> For displaying ads (free tier)</li><li><strong>Cloudinary:</strong> For image storage</li></ul>
+<h2>5. Data Retention</h2>
+<p>Free tier: Trade data retained for 14 days. Premium: Unlimited retention. You can delete your data at any time.</p>
+<h2>6. Your Rights</h2>
+<p>You can request deletion of your account and all associated data by contacting us.</p>
+<h2>7. Contact</h2>
+<p>For privacy inquiries: ck.ravuri@gmail.com</p>
+</body></html>""")
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms_of_service():
+    """Serve Terms of Service page"""
+    return HTMLResponse(content="""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EdgeLog - Terms of Service</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#000;color:#ccc;padding:24px;max-width:700px;margin:0 auto;line-height:1.7}h1{color:#22c55e;font-size:28px;margin-bottom:8px}h2{color:#fff;font-size:18px;margin:24px 0 8px}p,li{font-size:14px;margin-bottom:8px}.updated{color:#888;font-size:12px;margin-bottom:24px}</style>
+</head><body>
+<h1>Terms of Service</h1>
+<p class="updated">Last updated: April 2026</p>
+<h2>1. Acceptance of Terms</h2>
+<p>By using EdgeLog, you agree to these terms. If you do not agree, do not use the app.</p>
+<h2>2. Account</h2>
+<p>You must create an account using Google Sign-In to use the App. You are responsible for maintaining the security of your account.</p>
+<h2>3. Subscriptions</h2>
+<p>EdgeLog offers free and premium tiers. Premium subscriptions are billed monthly ($5.99) or yearly ($49.99). Payments are processed through Apple App Store or Google Play Store.</p>
+<h2>4. Voice Feature</h2>
+<p>Voice trade logging processes audio in real-time using AI. Recordings are not stored. Free users: 1 voice log per week. Premium users: unlimited.</p>
+<h2>5. Content</h2>
+<p>You retain ownership of all trading data you enter. We do not share your trading data with third parties except as required to provide the service.</p>
+<h2>6. AI Reports</h2>
+<p>AI-generated insights are for informational purposes only and do not constitute financial advice. Trading involves risk.</p>
+<h2>7. Disclaimer</h2>
+<p>EdgeLog is a journaling tool, not a trading platform. We are not responsible for trading decisions or financial losses.</p>
+<h2>8. Changes</h2>
+<p>We may update these terms. Continued use constitutes acceptance of changes.</p>
+<h2>9. Contact</h2>
+<p>Questions: ck.ravuri@gmail.com</p>
+</body></html>""")
+
+
+
 # ==================== HEALTH CHECK ====================
 
 @api_router.get("/")
