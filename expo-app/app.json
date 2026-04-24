@@ -14,18 +14,30 @@
       "backgroundColor": "#000000"
     },
     "ios": {
-      "bundleIdentifier": "com.ravuri.edgelog",
+      "bundleIdentifier": "com.edgelog.app",
       "supportsTablet": true,
+      "usesAppleSignIn": true,
+      "googleServicesFile": "./GoogleService-Info.plist",
       "config": {
         "googleMobileAdsAppId": "ca-app-pub-8958093663498636~7989527556"
+      },
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.168585078949-rgs53ketk7c1rgetbq9iftnjhv0jehi0"
+            ]
+          }
+        ]
       }
     },
     "android": {
-      "package": "com.ravuri.edgelog",
+      "package": "com.edgelog.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
+      "googleServicesFile": "./google-services.json",
       "config": {
         "googleMobileAdsAppId": "ca-app-pub-8958093663498636~5932109432"
       },
@@ -44,10 +56,20 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-apple-authentication",
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "EdgeLog needs microphone access to record voice trade entries."
+        }
+      ]
     ],
     "extra": {
-      "backendUrl": "https://edgelog-staging-3.preview.emergentagent.com"
+      "backendUrl": "https://edgelog-staging-3.preview.emergentagent.com",
+      "googleWebClientId": "168585078949-dbma6ti5vg2tm74s0eb7sf66i61rhu8o.apps.googleusercontent.com",
+      "googleIosClientId": "168585078949-rgs53ketk7c1rgetbq9iftnjhv0jehi0.apps.googleusercontent.com"
     }
   }
 }

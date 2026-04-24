@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>168585078949-rgs53ketk7c1rgetbq9iftnjhv0jehi0.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.168585078949-rgs53ketk7c1rgetbq9iftnjhv0jehi0</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>168585078949-u64hra7ufv7mf8o122f4oscvjrcnpvfo.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCXe49lU6wqvrIjyjJOE1mMzIfqyDq03WA</string>
+	<key>GCM_SENDER_ID</key>
+	<string>168585078949</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.ravuri.edgelog</string>
+	<key>PROJECT_ID</key>
+	<string>edgelog-ba3af</string>
+	<key>STORAGE_BUCKET</key>
+	<string>edgelog-ba3af.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:168585078949:ios:c77b840284250643b3454c</string>
+</dict>
+</plist>

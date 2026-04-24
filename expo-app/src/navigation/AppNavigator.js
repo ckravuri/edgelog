@@ -10,9 +10,11 @@ import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import AddTradeScreen from '../screens/AddTradeScreen';
 import DashboardScreen from '../screens/DashboardScreen';
+import CalendarScreen from '../screens/CalendarScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import VoiceTradeScreen from '../screens/VoiceTradeScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -45,13 +47,13 @@ function MainTabs() {
         },
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
+        tabBarIcon: ({ focused, color }) => {
           let name;
           if (route.name === 'Home') name = focused ? 'home' : 'home-outline';
           else if (route.name === 'Dashboard') name = focused ? 'stats-chart' : 'stats-chart-outline';
+          else if (route.name === 'Calendar') name = focused ? 'calendar' : 'calendar-outline';
           else if (route.name === 'History') name = focused ? 'time' : 'time-outline';
-          else if (route.name === 'Reports') name = focused ? 'document-text' : 'document-text-outline';
           else if (route.name === 'Settings') name = focused ? 'settings' : 'settings-outline';
           return <Ionicons name={name} size={22} color={color} />;
         },
@@ -59,8 +61,8 @@ function MainTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
+      <Tab.Screen name="Calendar" component={CalendarScreen} />
       <Tab.Screen name="History" component={HistoryScreen} />
-      <Tab.Screen name="Reports" component={ReportsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
@@ -82,6 +84,12 @@ export default function AppNavigator() {
               component={AddTradeScreen}
               options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
             />
+            <Stack.Screen
+              name="VoiceTrade"
+              component={VoiceTradeScreen}
+              options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen name="Reports" component={ReportsScreen} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />

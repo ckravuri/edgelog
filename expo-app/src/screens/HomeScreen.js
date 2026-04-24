@@ -50,12 +50,20 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.greeting}>Welcome back,</Text>
             <Text style={styles.name}>{firstName}</Text>
           </View>
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={() => navigation.navigate('AddTrade')}
-          >
-            <Ionicons name="add" size={28} color="#000" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity
+              style={[styles.addBtn, { backgroundColor: colors.blue }]}
+              onPress={() => navigation.navigate('VoiceTrade')}
+            >
+              <Ionicons name="mic" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.addBtn}
+              onPress={() => navigation.navigate('AddTrade')}
+            >
+              <Ionicons name="add" size={28} color="#000" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Discipline Card */}

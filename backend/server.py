@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, Query, UploadFile, File
 from fastapi.responses import Response as FastAPIResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -16,6 +16,13 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from enum import Enum
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from emergentintegrations.llm.openai import OpenAISpeechToText
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
+import jwt
+from jwt.algorithms import RSAAlgorithm
+import json
+import tempfile
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -49,6 +56,10 @@ logger = logging.getLogger(__name__)
 # Constants
 FREE_PLAN_DAYS = 14
 EMERGENT_AUTH_URL = "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data"
+GOOGLE_WEB_CLIENT_ID = "168585078949-dbma6ti5vg2tm74s0eb7sf66i61rhu8o.apps.googleusercontent.com"
+GOOGLE_IOS_CLIENT_ID = "168585078949-rgs53ketk7c1rgetbq9iftnjhv0jehi0.apps.googleusercontent.com"
+GOOGLE_ANDROID_CLIENT_ID = "168585078949-va9hptqsimbnqseaq3ge90rjur2takfc.apps.googleusercontent.com"
+APPLE_APP_ID = "com.edgelog.app"
 
 # ==================== MODELS ====================
 
@@ -416,7 +427,7 @@ function returnToApp(){{
   var ua=navigator.userAgent.toLowerCase();
   if(ua.includes('android')){{
     setTimeout(function(){{
-      window.location.href='intent://auth?auth_request_id='+authRequestId+'&status=success#Intent;scheme=edgelog;package=com.ravuri.edgelog;end';
+      window.location.href='intent://auth?auth_request_id='+authRequestId+'&status=success#Intent;scheme=edgelog;package=com.edgelog.app;end';
     }},500);
   }}
   setTimeout(function(){{
@@ -473,6 +484,194 @@ processAuth();
         }
     )
 
+
+
+
+# ==================== GOOGLE SIGN-IN (Native) ====================
+
+class GoogleSignInRequest(BaseModel):
+    id_token: str
+
+@api_router.post("/auth/google")
+async def google_sign_in(request: GoogleSignInRequest, response: Response):
+    """Verify Google ID token and create/login user"""
+    try:
+        idinfo = google_id_token.verify_oauth2_token(
+            request.id_token,
+            google_requests.Request(),
+            audience=None  # Accept any audience, we check manually
+        )
+        
+        # Verify the token is from our app
+        aud = idinfo.get('aud', '')
+        valid_audiences = [GOOGLE_WEB_CLIENT_ID, GOOGLE_IOS_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID]
+        if aud not in valid_audiences:
+            logger.warning(f"Google token audience mismatch: {aud}")
+            raise HTTPException(status_code=401, detail="Invalid token audience")
+        
+        if idinfo.get('iss') not in ['accounts.google.com', 'https://accounts.google.com']:
+            raise HTTPException(status_code=401, detail="Invalid token issuer")
+        
+        email = idinfo.get('email')
+        name = idinfo.get('name', email.split('@')[0] if email else 'User')
+        picture = idinfo.get('picture')
+        
+        if not email:
+            raise HTTPException(status_code=401, detail="No email in token")
+        
+        # Find or create user
+        existing_user = await db.users.find_one({"email": email}, {"_id": 0})
+        
+        if existing_user:
+            user_id = existing_user["user_id"]
+            await db.users.update_one(
+                {"user_id": user_id},
+                {"$set": {"name": name, "picture": picture}}
+            )
+        else:
+            user_id = f"user_{uuid.uuid4().hex[:12]}"
+            trial_expires = datetime.now(timezone.utc) + timedelta(days=7)
+            new_user = {
+                "user_id": user_id,
+                "email": email,
+                "name": name,
+                "picture": picture,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "max_trades_per_day": 5,
+                "subscription_tier": "premium",
+                "subscription_expires_at": trial_expires.isoformat(),
+                "is_trial": True,
+                "trial_started_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(new_user)
+            logger.info(f"New Google user {user_id} registered with 7-day free trial")
+        
+        session_token = f"google_session_{uuid.uuid4().hex}"
+        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        
+        session_doc = {
+            "session_id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "session_token": session_token,
+            "expires_at": expires_at.isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.user_sessions.insert_one(session_doc)
+        
+        user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+        return {"user": user_doc, "session_token": session_token}
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error(f"Google token verification failed: {e}")
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+    except Exception as e:
+        logger.error(f"Google sign-in error: {e}")
+        raise HTTPException(status_code=500, detail="Authentication failed")
+
+# ==================== APPLE SIGN-IN (Native iOS) ====================
+
+APPLE_PUBLIC_KEY_URL = "https://appleid.apple.com/auth/keys"
+
+class AppleSignInRequest(BaseModel):
+    identity_token: str
+    user_id: str
+    email: Optional[str] = None
+    name: Optional[str] = None
+
+@api_router.post("/auth/apple")
+async def apple_sign_in(request: AppleSignInRequest, response: Response):
+    """Verify Apple identity token and create/login user"""
+    try:
+        # Fetch Apple's public keys
+        async with httpx.AsyncClient() as client_http:
+            resp = await client_http.get(APPLE_PUBLIC_KEY_URL)
+            if resp.status_code != 200:
+                raise HTTPException(status_code=503, detail="Unable to fetch Apple public keys")
+            apple_keys = resp.json()
+        
+        # Decode token header to find key
+        unverified_header = jwt.get_unverified_header(request.identity_token)
+        kid = unverified_header.get('kid')
+        
+        matching_key = None
+        for key in apple_keys.get('keys', []):
+            if key.get('kid') == kid:
+                matching_key = key
+                break
+        
+        if not matching_key:
+            raise HTTPException(status_code=401, detail="No matching Apple key found")
+        
+        public_key = RSAAlgorithm.from_jwk(json.dumps(matching_key))
+        decoded_token = jwt.decode(
+            request.identity_token,
+            public_key,
+            algorithms=['RS256'],
+            audience=APPLE_APP_ID,
+            issuer="https://appleid.apple.com",
+        )
+        
+        apple_user_id = decoded_token.get('sub')
+        email = decoded_token.get('email') or request.email
+        
+        if not apple_user_id:
+            raise HTTPException(status_code=401, detail="No user ID in Apple token")
+        
+        existing_user = await db.users.find_one(
+            {"$or": [
+                {"apple_user_id": apple_user_id},
+                {"email": email} if email else {"_id": None}
+            ]},
+            {"_id": 0}
+        )
+        
+        if existing_user:
+            user_id = existing_user["user_id"]
+            update_data = {"apple_user_id": apple_user_id}
+            if request.name and not existing_user.get("name"):
+                update_data["name"] = request.name
+            await db.users.update_one({"user_id": user_id}, {"$set": update_data})
+        else:
+            user_id = f"user_{uuid.uuid4().hex[:12]}"
+            name = request.name or (email.split('@')[0] if email else "Apple User")
+            trial_expires = datetime.now(timezone.utc) + timedelta(days=7)
+            new_user = {
+                "user_id": user_id,
+                "apple_user_id": apple_user_id,
+                "email": email,
+                "name": name,
+                "picture": None,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "max_trades_per_day": 5,
+                "subscription_tier": "premium",
+                "subscription_expires_at": trial_expires.isoformat(),
+                "is_trial": True,
+                "trial_started_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(new_user)
+            logger.info(f"New Apple user {user_id} registered")
+        
+        session_token = f"apple_session_{uuid.uuid4().hex}"
+        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        session_doc = {
+            "session_id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "session_token": session_token,
+            "expires_at": expires_at.isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.user_sessions.insert_one(session_doc)
+        
+        user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+        return {"user": user_doc, "session_token": session_token}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Apple sign-in error: {e}")
+        raise HTTPException(status_code=500, detail="Authentication failed")
 
 
 # ==================== CLOUDINARY ENDPOINTS ====================
@@ -1489,6 +1688,240 @@ async def import_mt4_mt5_trades(
         logger.error(f"Import error: {e}")
         raise HTTPException(status_code=400, detail=f"Failed to parse file: {str(e)}")
 
+
+# ==================== VOICE TRADE PARSING ====================
+
+@api_router.post("/voice/parse-trade")
+async def voice_parse_trade(
+    audio: UploadFile = File(...),
+    user: User = Depends(get_current_user)
+):
+    """Parse voice recording into structured trade data (Premium or 1x/week free)"""
+    # Check subscription for voice feature
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    is_premium = False
+    if user_doc and user_doc.get("subscription_tier") == "premium":
+        expires_at = user_doc.get("subscription_expires_at")
+        if expires_at:
+            if isinstance(expires_at, str):
+                expires_at = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+            is_premium = expires_at > datetime.now(timezone.utc)
+    
+    if not is_premium:
+        # Check weekly voice usage for free users
+        now = datetime.now(timezone.utc)
+        voice_week_start = user_doc.get("voice_week_start") if user_doc else None
+        voice_uses = user_doc.get("voice_uses_this_week", 0) if user_doc else 0
+        
+        if voice_week_start:
+            if isinstance(voice_week_start, str):
+                voice_week_start = datetime.fromisoformat(voice_week_start.replace("Z", "+00:00"))
+            if (now - voice_week_start).days >= 7:
+                voice_uses = 0
+                voice_week_start = now
+        else:
+            voice_week_start = now
+        
+        if voice_uses >= 1:
+            days_left = 7 - (now - voice_week_start).days
+            raise HTTPException(
+                status_code=403,
+                detail=f"Free users get 1 voice log per week. Upgrade to Premium for unlimited! ({days_left} days until reset)"
+            )
+    
+    try:
+        # Save audio to temp file
+        suffix = ".m4a" if audio.content_type and "m4a" in audio.content_type else ".wav"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            content = await audio.read()
+            if len(content) > 25 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail="Audio file too large (max 25MB)")
+            tmp.write(content)
+            tmp_path = tmp.name
+        
+        # Transcribe with Whisper
+        stt = OpenAISpeechToText(api_key=os.getenv("EMERGENT_LLM_KEY"))
+        with open(tmp_path, "rb") as audio_file:
+            transcription = await stt.transcribe(
+                file=audio_file,
+                model="whisper-1",
+                response_format="json",
+                language="en",
+                prompt="Trading trade entry. Instruments like XAUUSD, EURUSD, GBPUSD, NAS100, US30, BTC."
+            )
+        
+        transcript_text = transcription.text
+        logger.info(f"Voice transcription: {transcript_text}")
+        
+        # Clean up temp file
+        os.unlink(tmp_path)
+        
+        # Extract structured data using LLM
+        chat = LlmChat(
+            api_key=os.getenv("EMERGENT_LLM_KEY"),
+            session_id=f"voice_{user.user_id}_{uuid.uuid4().hex[:8]}",
+            system_message="You are a trading data extraction assistant. Extract structured trade data from user speech. Return ONLY valid JSON, no markdown."
+        ).with_model("openai", "gpt-5.2")
+        
+        extraction_prompt = f"""Extract structured trade data from this speech transcript:
+
+"{transcript_text}"
+
+Return ONLY this JSON format (use null for missing values):
+{{
+  "instrument": "XAUUSD",
+  "trade_type": "buy",
+  "entry_price": 2320.50,
+  "stop_loss": 2310.00,
+  "take_profit": 2340.00,
+  "lot_size": 0.01,
+  "notes": "breakout trade"
+}}
+
+Rules:
+- instrument: uppercase trading pair (XAUUSD, EURUSD, etc.)
+- trade_type: "buy" or "sell" or null
+- entry_price, stop_loss, take_profit: numbers or null
+- lot_size: number or null (default null)
+- notes: any extra context mentioned"""
+        
+        ai_response = await chat.send_message(UserMessage(text=extraction_prompt))
+        
+        # Parse JSON from AI response
+        try:
+            # Strip markdown code blocks if present
+            cleaned = ai_response.strip()
+            if cleaned.startswith("```"):
+                cleaned = cleaned.split("\n", 1)[1] if "\n" in cleaned else cleaned[3:]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+            if cleaned.startswith("json"):
+                cleaned = cleaned[4:].strip()
+            
+            trade_data = json.loads(cleaned)
+        except json.JSONDecodeError:
+            trade_data = {"instrument": None, "trade_type": None, "entry_price": None,
+                         "stop_loss": None, "take_profit": None, "lot_size": None, "notes": transcript_text}
+        
+        # Increment voice usage for free users
+        if not is_premium:
+            now = datetime.now(timezone.utc)
+            await db.users.update_one(
+                {"user_id": user.user_id},
+                {"$set": {
+                    "voice_uses_this_week": (voice_uses or 0) + 1,
+                    "voice_week_start": (voice_week_start or now).isoformat()
+                }}
+            )
+        
+        return {
+            "success": True,
+            "transcript": transcript_text,
+            "trade_data": trade_data
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Voice parse error: {e}")
+        # Clean up temp file on error
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"Voice processing failed: {str(e)}")
+
+# ==================== CALENDAR SUMMARY ====================
+
+@api_router.get("/trades/calendar-summary")
+async def get_calendar_summary(
+    year: int = Query(default=None),
+    month: int = Query(default=None),
+    user: User = Depends(get_current_user)
+):
+    """Get daily trade summary for calendar view"""
+    now = datetime.now(timezone.utc)
+    if not year:
+        year = now.year
+    if not month:
+        month = now.month
+    
+    # Build date range for the month
+    start_date = datetime(year, month, 1, tzinfo=timezone.utc)
+    if month == 12:
+        end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+    else:
+        end_date = datetime(year, month + 1, 1, tzinfo=timezone.utc)
+    
+    trades = await db.trades.find(
+        {
+            "user_id": user.user_id,
+            "trade_date": {
+                "$gte": start_date.isoformat(),
+                "$lt": end_date.isoformat()
+            }
+        },
+        {"_id": 0}
+    ).to_list(1000)
+    
+    # Aggregate by day
+    daily_summary = {}
+    for trade in trades:
+        trade_date_str = trade.get("trade_date", "")[:10]
+        if trade_date_str not in daily_summary:
+            daily_summary[trade_date_str] = {
+                "date": trade_date_str,
+                "trades": 0,
+                "pnl": 0,
+                "wins": 0,
+                "losses": 0,
+                "breakevens": 0,
+            }
+        day = daily_summary[trade_date_str]
+        day["trades"] += 1
+        day["pnl"] += trade.get("pnl", 0) or 0
+        outcome = trade.get("outcome", "")
+        if outcome == "win":
+            day["wins"] += 1
+        elif outcome == "loss":
+            day["losses"] += 1
+        elif outcome == "breakeven":
+            day["breakevens"] += 1
+    
+    # Calculate result per day
+    for day in daily_summary.values():
+        if day["pnl"] > 0:
+            day["result"] = "profit"
+        elif day["pnl"] < 0:
+            day["result"] = "loss"
+        else:
+            day["result"] = "breakeven" if day["trades"] > 0 else "none"
+    
+    # Month stats
+    total_trades = sum(d["trades"] for d in daily_summary.values())
+    total_wins = sum(d["wins"] for d in daily_summary.values())
+    total_losses_count = sum(d["losses"] for d in daily_summary.values())
+    closed = total_wins + total_losses_count
+    win_rate = (total_wins / closed * 100) if closed > 0 else 0
+    green_days = sum(1 for d in daily_summary.values() if d["result"] == "profit")
+    red_days = sum(1 for d in daily_summary.values() if d["result"] == "loss")
+    total_pnl = sum(d["pnl"] for d in daily_summary.values())
+    
+    return {
+        "year": year,
+        "month": month,
+        "days": list(daily_summary.values()),
+        "stats": {
+            "total_trades": total_trades,
+            "win_rate": round(win_rate, 1),
+            "green_days": green_days,
+            "red_days": red_days,
+            "total_pnl": round(total_pnl, 2)
+        }
+    }
+
+
 # ==================== EXPORT & SHARE ====================
 
 @api_router.get("/export/trades")
@@ -1665,7 +2098,7 @@ async def asset_links():
             "relation": ["delegate_permission/common.handle_all_urls"],
             "target": {
                 "namespace": "android_app",
-                "package_name": "com.ravuri.edgelog",
+                "package_name": "com.edgelog.app",
                 "sha256_cert_fingerprints": [
                     "6B:AA:80:2E:74:FB:BA:FD:7B:9E:5F:B4:E6:4B:8B:E8:22:42:2A:F4:33:3D:B2:E5:54:92:83:11:0A:5E:15:11"
                 ]

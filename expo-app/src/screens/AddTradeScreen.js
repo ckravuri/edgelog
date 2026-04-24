@@ -10,17 +10,18 @@ import * as api from '../services/api';
 const PAIRS = ['EUR/USD','GBP/USD','USD/JPY','AUD/USD','USD/CAD','NZD/USD','XAU/USD','US30','NAS100','SPX500','BTC/USD','ETH/USD'];
 const EMOTIONS = ['Confident','Fearful','Greedy','Calm','Anxious','Neutral','Revenge'];
 
-export default function AddTradeScreen({ navigation }) {
-  const [pair, setPair] = useState('');
-  const [customPair, setCustomPair] = useState('');
-  const [tradeType, setTradeType] = useState('buy');
-  const [entryPrice, setEntryPrice] = useState('');
-  const [stopLoss, setStopLoss] = useState('');
-  const [takeProfit, setTakeProfit] = useState('');
-  const [lotSize, setLotSize] = useState('');
+export default function AddTradeScreen({ navigation, route }) {
+  const prefill = route?.params?.prefill || {};
+  const [pair, setPair] = useState(prefill.trading_pair || '');
+  const [customPair, setCustomPair] = useState(PAIRS.includes(prefill.trading_pair) ? '' : (prefill.trading_pair || ''));
+  const [tradeType, setTradeType] = useState(prefill.trade_type || 'buy');
+  const [entryPrice, setEntryPrice] = useState(prefill.entry_price || '');
+  const [stopLoss, setStopLoss] = useState(prefill.stop_loss || '');
+  const [takeProfit, setTakeProfit] = useState(prefill.take_profit || '');
+  const [lotSize, setLotSize] = useState(prefill.lot_size || '');
   const [outcome, setOutcome] = useState('open');
   const [pnl, setPnl] = useState('');
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(prefill.notes || '');
   const [emotion, setEmotion] = useState('');
   const [saving, setSaving] = useState(false);
 

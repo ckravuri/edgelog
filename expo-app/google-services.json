@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "168585078949",
+    "project_id": "edgelog-ba3af",
+    "storage_bucket": "edgelog-ba3af.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:168585078949:android:3f02182fcd9a7684b3454c",
+        "android_client_info": {
+          "package_name": "com.edgelog.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "168585078949-va9hptqsimbnqseaq3ge90rjur2takfc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.edgelog.app",
+            "certificate_hash": "aae6907ff3411377fd92a8909927e0c7faa6dd59"
+          }
+        },
+        {
+          "client_id": "168585078949-dbma6ti5vg2tm74s0eb7sf66i61rhu8o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWqFRT9UQtU9cpt8WttycsBs1JGbPy1fI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "168585078949-dbma6ti5vg2tm74s0eb7sf66i61rhu8o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "168585078949-rgs53ketk7c1rgetbq9iftnjhv0jehi0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ravuri.edgelog"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
