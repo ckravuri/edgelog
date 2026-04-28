@@ -165,7 +165,7 @@ export default function LoginPage() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-green-500/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="flex items-center gap-3 mb-4 animate-fadeIn">
-        <TrendingUp className="w-10 h-10 text-green-500" strokeWidth={1.5} />
+        <img src="/edgelog-logo.png" alt="EdgeLog" className="w-24 h-24 rounded-2xl" />
       </div>
 
       <h1 className="auth-logo animate-fadeIn" style={{ animationDelay: '0.1s' }} data-testid="app-logo">
