@@ -1767,6 +1767,8 @@ async def voice_parse_trade(
 
 "{transcript_text}"
 
+Today's date is {datetime.now(timezone.utc).strftime('%Y-%m-%d')}.
+
 Return ONLY this JSON format (use null for missing values):
 {{
   "instrument": "XAUUSD",
@@ -1777,6 +1779,7 @@ Return ONLY this JSON format (use null for missing values):
   "lot_size": 0.01,
   "pnl": 150.00,
   "outcome": "win",
+  "trade_date": "2026-04-25",
   "notes": "breakout trade"
 }}
 
@@ -1787,6 +1790,7 @@ Rules:
 - lot_size: number or null (default null)
 - pnl: profit/loss amount in dollars, positive for profit, negative for loss, null if not mentioned
 - outcome: "win" if profit mentioned, "loss" if loss mentioned, "open" if neither mentioned
+- trade_date: date in YYYY-MM-DD format. If user says "today" use today's date, if "yesterday" use yesterday, or parse the mentioned date. Use today if not mentioned.
 - notes: any extra context mentioned"""
         
         ai_response = await chat.send_message(UserMessage(text=extraction_prompt))

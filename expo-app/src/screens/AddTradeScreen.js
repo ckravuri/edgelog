@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { colors } from '../theme/colors';
 import * as api from '../services/api';
 
@@ -24,6 +25,8 @@ export default function AddTradeScreen({ navigation, route }) {
   const [notes, setNotes] = useState(prefill.notes || '');
   const [emotion, setEmotion] = useState('');
   const [saving, setSaving] = useState(false);
+  const [tradeDate, setTradeDate] = useState(prefill.trade_date ? new Date(prefill.trade_date) : new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const selectedPair = customPair || pair;
 
@@ -41,7 +44,7 @@ export default function AddTradeScreen({ navigation, route }) {
         stop_loss: stopLoss ? parseFloat(stopLoss) : null,
         take_profit: takeProfit ? parseFloat(takeProfit) : null,
         lot_size: parseFloat(lotSize),
-        trade_date: new Date().toISOString(),
+        trade_date: tradeDate.toISOString(),
         outcome,
         pnl: pnl ? parseFloat(pnl) : null,
         notes: notes || null,
@@ -90,6 +93,29 @@ export default function AddTradeScreen({ navigation, route }) {
             value={customPair}
             onChangeText={(t) => { setCustomPair(t); setPair(''); }}
           />
+
+          {/* Trade Date */}
+          <Text style={styles.label}>Trade Date</Text>
+          <TouchableOpacity style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
+            <Ionicons name="calendar-outline" size={18} color={colors.accent} />
+            <Text style={styles.dateText}>
+              {tradeDate.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+            </Text>
+            <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={tradeDate}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              maximumDate={new Date()}
+              onChange={(event, date) => {
+                setShowDatePicker(Platform.OS === 'ios');
+                if (date) setTradeDate(date);
+              }}
+              themeVariant="dark"
+            />
+          )}
 
           {/* Buy/Sell */}
           <Text style={styles.label}>Direction</Text>
@@ -217,6 +243,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card, borderRadius: 10, padding: 14, color: colors.text,
     borderWidth: 1, borderColor: colors.cardBorder, fontSize: 15,
   },
+  dateBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: colors.card, borderRadius: 10, padding: 14,
+    borderWidth: 1, borderColor: colors.cardBorder,
+  },
+  dateText: { flex: 1, color: colors.text, fontSize: 15 },
   chipRow: { marginBottom: 8 },
   chip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8,
