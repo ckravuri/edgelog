@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -59,9 +59,12 @@ export default function HomeScreen({ navigation }) {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Welcome back,</Text>
-            <Text style={styles.name}>{firstName}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <Image source={require('../../assets/icon.png')} style={styles.logoImg} />
+            <View>
+              <Text style={styles.greeting}>Welcome back,</Text>
+              <Text style={styles.name}>{firstName}</Text>
+            </View>
           </View>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <TouchableOpacity
@@ -198,6 +201,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: 16 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  logoImg: { width: 40, height: 40, borderRadius: 10 },
   greeting: { fontSize: 14, color: colors.textSecondary },
   name: { fontSize: 24, fontWeight: '800', color: colors.text },
   addBtn: {

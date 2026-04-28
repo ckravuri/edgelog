@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { colors } from '../theme/colors';
 import { useAuth } from '../context/AuthContext';
 import { BACKEND_URL } from '../config';
 import * as api from '../services/api';
+import { initRevenueCat, getOfferings, purchasePackage, restorePurchases } from '../services/revenuecat';
 
 const PRIVACY_URL = `${BACKEND_URL}/privacy`;
 const TERMS_URL = `${BACKEND_URL}/terms`;
@@ -17,13 +18,25 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const [subscription, setSubscription] = useState(null);
   const [maxTrades, setMaxTrades] = useState(5);
+  const [offerings, setOfferings] = useState(null);
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
       const sub = await api.getSubscriptionStatus();
       setSubscription(sub);
     } catch {}
-  }, []);
+
+    // Init RevenueCat and load offerings
+    try {
+      await initRevenueCat(user?.user_id);
+      const off = await getOfferings();
+      setOfferings(off);
+    } catch (e) {
+      console.warn('RC load error:', e.message);
+    }
+  }, [user]);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
 
@@ -40,10 +53,53 @@ export default function SettingsScreen() {
     try { await api.updateDiscipline(newMax); } catch {}
   };
 
+  const handlePurchase = async (pkg) => {
+    if (!pkg) {
+      Alert.alert('Not Available', 'This subscription package is not available yet. Please try again later.');
+      return;
+    }
+    setPurchasing(true);
+    try {
+      const result = await purchasePackage(pkg);
+      if (result.success) {
+        Alert.alert('Success!', 'Welcome to EdgeLog Premium!');
+        await loadData();
+      } else if (result.cancelled) {
+        // User cancelled — do nothing
+      }
+    } catch (e) {
+      Alert.alert('Error', e.message || 'Purchase failed');
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      const result = await restorePurchases();
+      if (result.isPremium) {
+        Alert.alert('Restored!', 'Your Premium subscription has been restored.');
+        await loadData();
+      } else {
+        Alert.alert('No Purchases', 'No previous subscriptions found.');
+      }
+    } catch (e) {
+      Alert.alert('Error', e.message || 'Restore failed');
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   const isPremium = subscription?.is_premium && !subscription?.is_trial;
   const isTrial = subscription?.is_trial;
   const trialDays = subscription?.trial_days_left;
   const showUpgrade = !isPremium;
+
+  const monthlyPkg = offerings?.monthly;
+  const annualPkg = offerings?.annual;
+  const monthlyPrice = monthlyPkg?.product?.priceString || '$5.99';
+  const annualPrice = annualPkg?.product?.priceString || '$49.99';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -105,22 +161,45 @@ export default function SettingsScreen() {
               <Text style={styles.upgradeTitle}>
                 {isTrial ? `Your trial expires in ${trialDays} days` : 'Upgrade to Premium'}
               </Text>
+
               <View style={styles.priceRow}>
-                <View style={styles.priceCard}>
-                  <Text style={styles.priceAmount}>$5.99</Text>
+                <TouchableOpacity
+                  style={styles.priceCard}
+                  onPress={() => handlePurchase(monthlyPkg)}
+                  disabled={purchasing}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.priceLabel}>Monthly</Text>
+                  <Text style={styles.priceAmount}>{monthlyPrice}</Text>
                   <Text style={styles.pricePeriod}>/month</Text>
-                </View>
-                <View style={[styles.priceCard, { borderColor: colors.accent }]}>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.priceCard, { borderColor: colors.accent }]}
+                  onPress={() => handlePurchase(annualPkg)}
+                  disabled={purchasing}
+                  activeOpacity={0.7}
+                >
                   <Text style={styles.priceBadge}>SAVE 30%</Text>
-                  <Text style={styles.priceAmount}>$49.99</Text>
+                  <Text style={styles.priceLabel}>Yearly</Text>
+                  <Text style={styles.priceAmount}>{annualPrice}</Text>
                   <Text style={styles.pricePeriod}>/year</Text>
-                </View>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.upgradeBtn}>
-                <Ionicons name="star" size={16} color="#000" />
-                <Text style={styles.upgradeBtnText}>Subscribe Now</Text>
+
+              {purchasing && (
+                <ActivityIndicator size="small" color={colors.accent} style={{ marginTop: 12 }} />
+              )}
+
+              <TouchableOpacity
+                style={styles.restoreBtn}
+                onPress={handleRestore}
+                disabled={restoring}
+              >
+                <Text style={styles.restoreText}>
+                  {restoring ? 'Restoring...' : 'Restore Purchases'}
+                </Text>
               </TouchableOpacity>
-              {!isTrial && <Text style={styles.upgradeNote}>7-day free trial included</Text>}
             </View>
           )}
         </View>
@@ -201,20 +280,17 @@ const styles = StyleSheet.create({
   featureLabel: { fontSize: 14, color: colors.text },
   upgradeBox: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border },
   upgradeTitle: { fontSize: 15, fontWeight: '700', color: colors.yellow, marginBottom: 12, textAlign: 'center' },
-  priceRow: { flexDirection: 'row', gap: 12, marginBottom: 4 },
+  priceRow: { flexDirection: 'row', gap: 12 },
   priceCard: {
-    flex: 1, backgroundColor: colors.surface, borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: colors.cardBorder, alignItems: 'center',
+    flex: 1, backgroundColor: colors.surface, borderRadius: 12, padding: 16,
+    borderWidth: 2, borderColor: colors.cardBorder, alignItems: 'center',
   },
+  priceLabel: { fontSize: 12, color: colors.textSecondary, marginBottom: 4 },
   priceBadge: { fontSize: 9, fontWeight: '800', color: colors.accent, backgroundColor: 'rgba(34,197,94,0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginBottom: 4 },
-  priceAmount: { fontSize: 24, fontWeight: '800', color: colors.text },
+  priceAmount: { fontSize: 26, fontWeight: '800', color: colors.text },
   pricePeriod: { fontSize: 12, color: colors.textSecondary },
-  upgradeBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 14, marginTop: 12,
-  },
-  upgradeBtnText: { color: '#000', fontWeight: '700', fontSize: 15 },
-  upgradeNote: { fontSize: 11, color: colors.textMuted, textAlign: 'center', marginTop: 6 },
+  restoreBtn: { alignItems: 'center', marginTop: 16, paddingVertical: 8 },
+  restoreText: { fontSize: 13, color: colors.accent, fontWeight: '600' },
   menuItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10 },
   menuText: { fontSize: 15, fontWeight: '600', color: colors.text },
   version: { textAlign: 'center', color: colors.textMuted, fontSize: 12, marginTop: 8 },

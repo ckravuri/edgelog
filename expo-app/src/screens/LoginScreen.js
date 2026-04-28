@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView, Platform,
+  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, SafeAreaView, Platform, Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -131,7 +131,7 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Ionicons name="trending-up" size={48} color={colors.accent} style={styles.icon} />
+        <Image source={require('../../assets/icon.png')} style={styles.logoImage} />
         <Text style={styles.logo}>E D G E L O G</Text>
         <Text style={styles.tagline}>Your Trading Edge, Journaled</Text>
 
@@ -190,7 +190,7 @@ function GoogleIcon() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  icon: { marginBottom: 16 },
+  logoImage: { width: 100, height: 100, borderRadius: 20, marginBottom: 16 },
   logo: { fontSize: 32, fontWeight: '800', color: colors.text, letterSpacing: 6, marginBottom: 8 },
   tagline: { fontSize: 15, color: colors.textSecondary, marginBottom: 48 },
   errorBox: {
