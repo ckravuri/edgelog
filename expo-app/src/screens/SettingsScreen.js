@@ -55,7 +55,11 @@ export default function SettingsScreen() {
 
   const handlePurchase = async (pkg) => {
     if (!pkg) {
-      Alert.alert('Not Available', 'This subscription package is not available yet. Please try again later.');
+      Alert.alert(
+        'Subscription',
+        'Subscription packages are loading. Please ensure the app is installed from the Play Store or try again later.',
+        [{ text: 'OK' }]
+      );
       return;
     }
     setPurchasing(true);
@@ -68,7 +72,15 @@ export default function SettingsScreen() {
         // User cancelled — do nothing
       }
     } catch (e) {
-      Alert.alert('Error', e.message || 'Purchase failed');
+      const msg = e.message || 'Purchase failed';
+      if (msg.includes('not available') || msg.includes('billing') || msg.includes('Play Store')) {
+        Alert.alert(
+          'Store Not Available',
+          'Subscriptions require the app to be installed from the Google Play Store or Apple App Store. This feature will work once the app is live on the store.'
+        );
+      } else {
+        Alert.alert('Purchase Error', msg);
+      }
     } finally {
       setPurchasing(false);
     }

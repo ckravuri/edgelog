@@ -29,6 +29,7 @@ export async function initRevenueCat(userId = null) {
     return true;
   } catch (e) {
     console.warn('[RC] Init failed:', e.message);
+    Purchases = null;
     return false;
   }
 }
@@ -37,7 +38,7 @@ export async function getOfferings() {
   if (!Purchases) return null;
   try {
     const offerings = await Purchases.getOfferings();
-    if (!offerings.current) return null;
+    if (!offerings || !offerings.current) return null;
 
     const pkgs = offerings.current.availablePackages || [];
     const monthly = pkgs.find(
@@ -55,7 +56,8 @@ export async function getOfferings() {
 }
 
 export async function purchasePackage(pkg) {
-  if (!Purchases || !pkg) throw new Error('Not ready');
+  if (!Purchases) throw new Error('Store not available. Please install from Play Store or App Store.');
+  if (!pkg) throw new Error('Package not available');
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
     const isPremium = customerInfo?.entitlements?.active?.[CONFIG.entitlementId]?.isActive || false;
