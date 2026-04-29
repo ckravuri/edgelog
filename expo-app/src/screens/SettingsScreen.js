@@ -106,6 +106,7 @@ export default function SettingsScreen() {
   const isPremium = subscription?.is_premium && !subscription?.is_trial;
   const isTrial = subscription?.is_trial;
   const trialDays = subscription?.trial_days_left;
+  const hasAccess = subscription?.is_premium; // trial OR premium both get access
   const showUpgrade = !isPremium;
 
   const monthlyPkg = offerings?.monthly;
@@ -161,12 +162,12 @@ export default function SettingsScreen() {
         {/* Subscription */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Subscription</Text>
-          <FeatureRow label="Ad-Free Experience" enabled={isPremium} />
-          <FeatureRow label="Unlimited Trade History" enabled={isPremium} />
-          <FeatureRow label="Unlimited AI Reports" enabled={isPremium} />
-          <FeatureRow label="Unlimited Voice Logging" enabled={isPremium} />
-          <FeatureRow label="MT4/MT5 Import" enabled={isPremium} />
-          <FeatureRow label="Export to CSV/PDF" enabled={isPremium} />
+          <FeatureRow label="Ad-Free Experience" enabled={hasAccess} />
+          <FeatureRow label="Unlimited Trade History" enabled={hasAccess} />
+          <FeatureRow label="Unlimited AI Reports" enabled={hasAccess} />
+          <FeatureRow label="Unlimited Voice Logging" enabled={isPremium} trial={isTrial} />
+          <FeatureRow label="MT4/MT5 Import" enabled={hasAccess} />
+          <FeatureRow label="Export to CSV/PDF" enabled={hasAccess} />
 
           {showUpgrade && (
             <View style={styles.upgradeBox}>
@@ -246,15 +247,18 @@ export default function SettingsScreen() {
   );
 }
 
-function FeatureRow({ label, enabled }) {
+function FeatureRow({ label, enabled, trial }) {
   return (
     <View style={styles.featureRow}>
       <Text style={styles.featureLabel}>{label}</Text>
-      <Ionicons
-        name={enabled ? 'checkmark-circle' : 'close-circle-outline'}
-        size={20}
-        color={enabled ? colors.accent : colors.textMuted}
-      />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        {trial && !enabled && <Text style={{ fontSize: 10, color: colors.yellow }}>1/day</Text>}
+        <Ionicons
+          name={enabled || trial ? 'checkmark-circle' : 'close-circle-outline'}
+          size={20}
+          color={enabled ? colors.accent : trial ? colors.yellow : colors.textMuted}
+        />
+      </View>
     </View>
   );
 }

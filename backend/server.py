@@ -1700,34 +1700,51 @@ async def voice_parse_trade(
     # Check subscription for voice feature
     user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
     is_premium = False
+    is_trial = False
     if user_doc and user_doc.get("subscription_tier") == "premium":
         expires_at = user_doc.get("subscription_expires_at")
         if expires_at:
             if isinstance(expires_at, str):
                 expires_at = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
-            is_premium = expires_at > datetime.now(timezone.utc)
+            if expires_at > datetime.now(timezone.utc):
+                is_trial = user_doc.get("is_trial", False)
+                is_premium = not is_trial
     
     if not is_premium:
-        # Check weekly voice usage for free users
+        # Trial users: 1 voice log per day. Free users: 1 per week.
         now = datetime.now(timezone.utc)
-        voice_week_start = user_doc.get("voice_week_start") if user_doc else None
-        voice_uses = user_doc.get("voice_uses_this_week", 0) if user_doc else 0
+        voice_day_str = user_doc.get("voice_last_date") if user_doc else None
+        voice_uses_today = user_doc.get("voice_uses_today", 0) if user_doc else 0
+        today_str = now.strftime("%Y-%m-%d")
         
-        if voice_week_start:
-            if isinstance(voice_week_start, str):
-                voice_week_start = datetime.fromisoformat(voice_week_start.replace("Z", "+00:00"))
-            if (now - voice_week_start).days >= 7:
-                voice_uses = 0
+        if voice_day_str != today_str:
+            voice_uses_today = 0
+        
+        if not is_trial:
+            # Free users: check weekly
+            voice_week_start = user_doc.get("voice_week_start") if user_doc else None
+            voice_uses = user_doc.get("voice_uses_this_week", 0) if user_doc else 0
+            if voice_week_start:
+                if isinstance(voice_week_start, str):
+                    voice_week_start = datetime.fromisoformat(voice_week_start.replace("Z", "+00:00"))
+                if (now - voice_week_start).days >= 7:
+                    voice_uses = 0
+                    voice_week_start = now
+            else:
                 voice_week_start = now
+            if voice_uses >= 1:
+                days_left = 7 - (now - voice_week_start).days
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Free users get 1 voice log per week. Upgrade to Premium for unlimited! ({days_left} days until reset)"
+                )
         else:
-            voice_week_start = now
-        
-        if voice_uses >= 1:
-            days_left = 7 - (now - voice_week_start).days
-            raise HTTPException(
-                status_code=403,
-                detail=f"Free users get 1 voice log per week. Upgrade to Premium for unlimited! ({days_left} days until reset)"
-            )
+            # Trial users: 1 per day
+            if voice_uses_today >= 1:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Trial users get 1 voice log per day. Upgrade to Premium for unlimited!"
+                )
     
     try:
         # Save audio to temp file
@@ -1812,15 +1829,20 @@ Rules:
             trade_data = {"instrument": None, "trade_type": None, "entry_price": None,
                          "stop_loss": None, "take_profit": None, "lot_size": None, "notes": transcript_text}
         
-        # Increment voice usage for free users
+        # Increment voice usage for non-premium users
         if not is_premium:
             now = datetime.now(timezone.utc)
+            today_str = now.strftime("%Y-%m-%d")
+            update_fields = {
+                "voice_last_date": today_str,
+                "voice_uses_today": (voice_uses_today or 0) + 1,
+            }
+            if not is_trial:
+                update_fields["voice_uses_this_week"] = (voice_uses or 0) + 1
+                update_fields["voice_week_start"] = (voice_week_start or now).isoformat()
             await db.users.update_one(
                 {"user_id": user.user_id},
-                {"$set": {
-                    "voice_uses_this_week": (voice_uses or 0) + 1,
-                    "voice_week_start": (voice_week_start or now).isoformat()
-                }}
+                {"$set": update_fields}
             )
         
         return {
@@ -2140,7 +2162,7 @@ async def privacy_policy():
 <h2>6. Your Rights</h2>
 <p>You can request deletion of your account and all associated data by contacting us.</p>
 <h2>7. Contact</h2>
-<p>For privacy inquiries: ck.ravuri@gmail.com</p>
+<p>For privacy inquiries: edgelog.review@gmail.com</p>
 </body></html>""")
 
 @app.get("/terms", response_class=HTMLResponse)
@@ -2160,7 +2182,7 @@ async def terms_of_service():
 <h2>3. Subscriptions</h2>
 <p>EdgeLog offers free and premium tiers. Premium subscriptions are billed monthly ($5.99) or yearly ($49.99). Payments are processed through Apple App Store or Google Play Store.</p>
 <h2>4. Voice Feature</h2>
-<p>Voice trade logging processes audio in real-time using AI. Recordings are not stored. Free users: 1 voice log per week. Premium users: unlimited.</p>
+<p>Voice trade logging processes audio in real-time using AI. Recordings are not stored. Trial users: 1 voice log per day. Free users: 1 voice log per week. Premium users: unlimited.</p>
 <h2>5. Content</h2>
 <p>You retain ownership of all trading data you enter. We do not share your trading data with third parties except as required to provide the service.</p>
 <h2>6. AI Reports</h2>
@@ -2170,7 +2192,7 @@ async def terms_of_service():
 <h2>8. Changes</h2>
 <p>We may update these terms. Continued use constitutes acceptance of changes.</p>
 <h2>9. Contact</h2>
-<p>Questions: ck.ravuri@gmail.com</p>
+<p>Questions: edgelog.review@gmail.com</p>
 </body></html>""")
 
 
